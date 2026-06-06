@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>China's State Media & the International Order | 中国官方媒体与国际秩序</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #faf9f7;
+      color: #1a1a1a;
+      line-height: 1.65;
+    }
+    a { color: #1a5276; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .zh { font-family: 'Noto Serif SC', 'SimSun', serif; color: #555; font-size: 0.88em; display: block; margin-top: 2px; }
+    h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+    h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+    p { margin-bottom: 0.8rem; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Header */
+    header {
+      background: #1a2744;
+      color: white;
+      padding: 2rem 0 1.5rem;
+      border-bottom: 4px solid #1a5276;
+    }
+    header .subtitle { font-size: 0.95rem; color: #aaa; margin-top: 0.5rem; }
+    header .zh { color: #ccc; }
+    nav { margin-top: 1.2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    nav a { color: #ccc; font-size: 0.9rem; font-family: sans-serif; }
+    nav a:hover { color: white; }
+
+    section { padding: 2.5rem 0; border-bottom: 1px solid #e8e4df; }
+    section:last-of-type { border-bottom: none; }
+    .section-label {
+      font-family: sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #1a5276;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Headlines */
+    .headlines { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 1rem; }
+    .headline-card {
+      background: white;
+      border: 1px solid #e0dbd4;
+      border-left: 4px solid #1a5276;
+      padding: 1rem 1.1rem;
+      border-radius: 0 4px 4px 0;
+    }
+    .headline-card .stat { font-size: 2rem; font-weight: 700; color: #1a5276; line-height: 1; }
+    .headline-card .label { font-size: 0.85rem; color: #444; margin-top: 0.3rem; font-family: sans-serif; }
+    .headline-card .zh { font-size: 0.78rem; }
+
+    /* Charts */
+    .chart-wrap { position: relative; height: 320px; margin-top: 1rem; }
+    .chart-note { font-size: 0.78rem; color: #666; font-family: sans-serif; margin-top: 0.5rem; }
+
+    /* Phase annotations */
+    .phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.2rem; }
+    .phase {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0.9rem 1rem;
+      font-size: 0.85rem;
+    }
+    .phase .phase-label { font-weight: 700; font-family: sans-serif; font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .phase-1 .phase-label { color: #2471a3; }
+    .phase-2 .phase-label { color: #1a5276; }
+    .phase-3 .phase-label { color: #7d3c98; }
+
+    /* Stances legend */
+    .stance-key { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: 0.6rem 0; font-family: sans-serif; font-size: 0.82rem; }
+    .sk-item { display: flex; align-items: center; gap: 0.35rem; }
+    .sk-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Terms / keywords */
+    .terms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .term-card {
+      background: white;
+      border: 1px solid #e0dbd4;
+      border-radius: 4px;
+      padding: 0.8rem 1rem;
+    }
+    .term-card .zh-term { font-size: 1.1rem; font-weight: 700; color: #1a2744; font-family: 'Noto Serif SC', serif; }
+    .term-card .en-term { font-size: 0.82rem; color: #555; margin-top: 0.2rem; font-family: sans-serif; }
+    .term-card .peak { font-size: 0.75rem; color: #999; font-family: sans-serif; margin-top: 0.35rem; }
+    .cohort-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-family: sans-serif;
+      padding: 1px 5px;
+      border-radius: 2px;
+      margin-top: 0.3rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .cohort-pre { background: #d6eaf8; color: #1a5276; }
+    .cohort-early { background: #d5f5e3; color: #1e8449; }
+    .cohort-trade { background: #f9ebea; color: #922b21; }
+
+    /* About */
+    .about-box {
+      background: white;
+      border: 1px solid #e0dbd4;
+      border-radius: 4px;
+      padding: 1.2rem 1.5rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Expandable definitions */
+    .expand-list { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.8rem; }
+    .expand-item { border: 1px solid #d6e4f0; border-radius: 4px; background: white; overflow: hidden; }
+    .expand-item summary {
+      cursor: pointer;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.87rem;
+      font-weight: 700;
+      font-family: sans-serif;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    .expand-item summary::-webkit-details-marker { display: none; }
+    .expand-item summary::after { content: '+'; margin-left: auto; font-size: 1rem; color: #999; font-weight: 400; }
+    .expand-item[open] summary::after { content: '−'; }
+    .expand-item summary:hover { background: #f0f6fb; }
+    .expand-body { padding: 0.6rem 0.9rem 0.8rem; font-size: 0.85rem; color: #333; border-top: 1px solid #e8f0f8; line-height: 1.6; }
+    .expand-body .zh { display: inline; font-size: 0.83em; color: #777; }
+    .code { font-weight: 700; font-family: monospace; font-size: 1rem; }
+
+    footer {
+      background: #1a2744;
+      color: #999;
+      padding: 1.5rem 0;
+      font-size: 0.82rem;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    footer a { color: #ccc; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.4rem; }
+      .phases { grid-template-columns: 1fr; }
+      .chart-wrap { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="section-label">Research project · Ongoing</div>
+    <h1>China's State Media<br>and the International Order</h1>
+    <span class="zh">中国官方媒体与国际秩序话语</span>
+    <p class="subtitle">How has People's Daily (人民日报) and Xinhua (新华社) talked about the international order since the 1980s? This site tracks language, tone, and stance over time.</p>
+    <nav>
+      <a href="#headlines">Findings 主要发现</a>
+      <a href="#stance">Stance over time 立场演变</a>
+      <a href="#terms">Key terms 关键词</a>
+      <a href="#csf">共同体</a>
+      <a href="#gc-ntr">大变局</a>
+      <a href="#about">About 关于</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HEADLINES -->
+<section id="headlines">
+  <div class="container">
+    <div class="section-label">Key findings · 主要发现</div>
+    <div class="headlines">
+      <div class="headline-card">
+        <div class="stat">9,050</div>
+        <div class="label">People's Daily articles coded for stance on the international order</div>
+        <span class="zh">已编码人民日报文章数量</span>
+      </div>
+      <div class="headline-card">
+        <div class="stat">2025</div>
+        <div class="label">Record year for articles defending the existing international order</div>
+        <span class="zh">维护现有国际秩序文章数量历史新高</span>
+      </div>
+      <div class="headline-card">
+        <div class="stat">3</div>
+        <div class="label">Distinct phases of international order discourse since the 1980s</div>
+        <span class="zh">1980年代以来国际秩序话语的三个阶段</span>
+      </div>
+      <div class="headline-card">
+        <div class="stat">~5 yrs</div>
+        <div class="label">Typical lifecycle of a Xi-era signature slogan before it declines</div>
+        <span class="zh">习近平时代标志性口号的典型生命周期</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STANCE OVER TIME -->
+<section id="stance">
+  <div class="container">
+    <div class="section-label">Stance over time · 立场演变</div>
+    <h2>How China's stance on the international order has shifted
+      <span class="zh">中国在国际秩序问题上的立场变化</span>
+    </h2>
+    <p style="font-size:0.9rem;color:#555;">Each article in People's Daily that mentions 国际秩序 was classified into one of four stances. The chart shows how the balance between these stances has changed year by year.</p>
+
+    <div class="stance-key">
+      <div class="sk-item"><div class="sk-dot" style="background:#2471a3;"></div> Defend 维护</div>
+      <div class="sk-item"><div class="sk-dot" style="background:#1e8449;"></div> Reform 改革</div>
+      <div class="sk-item"><div class="sk-dot" style="background:#d4ac0d;"></div> Revisionist 修正</div>
+      <div class="sk-item"><div class="sk-dot" style="background:#aaa;"></div> Insufficient signal</div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="stance-chart"></canvas>
+    </div>
+    <p class="chart-note">Only articles with a classifiable stance are included. "Insufficient signal" articles (which contain the term but do not express a clear stance) are shown in grey.</p>
+
+    <div class="phases">
+      <div class="phase phase-1">
+        <div class="phase-label">Phase 1 · Pre-Xi (1980s–2012)</div>
+        <p>Reform-dominant. China pushed for a "new international political and economic order" (新国际政治经济秩序), emphasising change from within the system.</p>
+        <span class="zh">改革主导。中国呼吁建立新的国际政治经济秩序。</span>
+      </div>
+      <div class="phase phase-2">
+        <div class="phase-label">Phase 2 · Early Xi (2013–2017)</div>
+        <p>Defend emerges strongly. As Xi Jinping promotes his "community of shared future" vision, language shifts toward preserving the existing order against perceived Western violations.</p>
+        <span class="zh">维护立场崛起。习近平推动人类命运共同体，话语转向维护现有秩序。</span>
+      </div>
+      <div class="phase phase-3">
+        <div class="phase-label">Phase 3 · Trade war onward (2018–)</div>
+        <p>Defend peaks in 2021 (84%). After 2022, Reform recovers. The 2025 spike — driven by US unilateralism — marks a record high in defensive language.</p>
+        <span class="zh">2021年维护立场达到峰值（84%）。2025年因美国单边主义再创历史新高。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STANCE CODING SCHEME -->
+<section>
+  <div class="container">
+    <div class="section-label">Classification scheme · 编码方案</div>
+    <h2>What do the stances mean?
+      <span class="zh">各立场的含义</span>
+    </h2>
+    <p style="font-size:0.82rem;color:#888;font-family:sans-serif;">Click a stance to expand its definition. 点击各立场查看定义。</p>
+    <div class="expand-list">
+      <details class="expand-item">
+        <summary><span class="code" style="color:#2471a3;margin-right:0.4rem;">D</span> <span style="color:#2471a3;">Defend 维护</span></summary>
+        <div class="expand-body">Defends the existing international order against challenge or violation — typically by accusing other powers (most often the United States) of undermining rules-based norms, violating sovereignty, or practising hegemonism. This stance treats the current order as broadly legitimate and worth preserving. It becomes dominant from 2013 onward and peaks in 2021 at 84% of classified articles. <span class="zh">维护：捍卫现有国际秩序，通常通过谴责他国（尤其是美国）破坏基于规则的规范、侵犯主权或推行霸权主义。该立场将现有秩序视为基本合法且值得维护。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span class="code" style="color:#1e8449;margin-right:0.4rem;">R</span> <span style="color:#1e8449;">Reform 改革</span></summary>
+        <div class="expand-body">Calls for gradual reform <em>within</em> the existing order — making it more representative of the Global South, more equitable in economic governance, or more multipolar in political terms. Crucially, Reform articles do not advocate replacing the system, only improving it. This is the dominant stance before Xi and recovers after 2022. <span class="zh">改革：呼吁在现有体系内推动渐进改革，使其更具代表性、更公平，或在政治上更趋多极化。改革立场的核心在于不主张取代体系，只主张改善它。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span class="code" style="color:#d4ac0d;margin-right:0.4rem;">V</span> <span style="color:#b8860b;">Revisionist 修正</span></summary>
+        <div class="expand-body">Advocates overturning or replacing the existing international order with an alternative system — for example, explicitly calling for a "new world order" or rejecting the legitimacy of existing institutions entirely. This is a relatively rare stance in People's Daily, most prevalent in the pre-Xi era and virtually absent after 2014. <span class="zh">修正：主张推翻或取代现有国际秩序，例如明确呼吁建立"新的世界秩序"或完全否认现有机构的合法性。该立场在《人民日报》中较为罕见，主要出现于前习近平时代，2014年后几乎消失。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span class="code" style="color:#666;margin-right:0.4rem;">DR</span> <span style="color:#555;">Defend-and-Reform 维护兼改革</span></summary>
+        <div class="expand-body">Both defends the existing order <em>and</em> calls for reform within it — a common combination in longer analytical or editorial texts that acknowledge flaws while rejecting wholesale replacement. More frequent in Xinhua than People's Daily; the higher rate in Xinhua is partly a text-length artefact (longer articles are more likely to express both positions). <span class="zh">维护兼改革：同时维护现有秩序并呼吁在其内部进行改革，常见于承认现有缺陷但拒绝全面颠覆的长篇分析或评论文章。在新华社中比《人民日报》更为常见。</span></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- KEY TERMS -->
+<section id="terms">
+  <div class="container">
+    <div class="section-label">Key terms tracked · 追踪的关键词</div>
+    <h2>The vocabulary of Chinese international order discourse
+      <span class="zh">中国国际秩序话语的核心词汇</span>
+    </h2>
+    <p style="font-size:0.9rem;color:#555;">These terms were tracked in People's Daily across the full dataset. Badge colour indicates when the term peaked. Click any term to expand. <span style="font-family:sans-serif;font-size:0.82em;color:#999;">点击词条查看释义。</span></p>
+    <div class="expand-list" style="margin-top:0.8rem;">
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">国际秩序</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">International order</span> <span class="cohort-badge cohort-pre" style="margin-left:0.4rem;">All periods</span></summary>
+        <div class="expand-body">The core search term for this project. Tracked throughout the full archive from the 1980s to 2026. Frequency rises sharply after 2013 and again after 2017. The term is used across all four stance categories, but the balance between them shifts dramatically over time — the central finding of this research. <span class="zh">本项目的核心检索词。贯穿整个档案库（1980年代至2026年）。2013年后频率大幅上升，2017年后再度攀升。该词贯穿四种立场类别，但各立场之间的比例随时间发生了显著变化——这正是本研究的核心发现。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">人类命运共同体</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">Community of shared future</span> <span class="cohort-badge cohort-early" style="margin-left:0.4rem;">Early Xi · Peak 2018</span></summary>
+        <div class="expand-body">Xi Jinping's signature concept, first articulated around 2013 and massively amplified from 2015. Proposes a vision of global order grounded in shared destiny, mutual benefit, and multilateral cooperation — positioned as China's alternative to a Western-centric liberal order. Enshrined in UN General Assembly resolutions. Usage has remained high but plateaued since 2018. See figure below. <span class="zh">习近平的标志性概念，约于2013年首次阐述，2015年起大幅推广。主张以共同命运、互利共赢和多边合作为基础构建全球秩序，定位为中国对西方中心自由主义秩序的替代方案。已被联合国大会决议采纳。2018年以来使用量保持高位但趋于平稳。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">新型国际关系</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">New type of international relations</span> <span class="cohort-badge cohort-early" style="margin-left:0.4rem;">Early Xi · Peak 2018</span></summary>
+        <div class="expand-body">An early Xi slogan calling for a new model of great-power relations based on non-conflict, non-confrontation, mutual respect, and win-win cooperation. Introduced around 2013 in the context of China-US relations; later broadened to all international relations. Peaked in 2018 alongside several other early Xi terms and has since declined markedly. See figure below alongside 百年大变局. <span class="zh">习近平执政初期的口号，呼吁建立以不冲突、不对抗、相互尊重、合作共赢为基础的新型大国关系。约于2013年在中美关系背景下提出，后扩展至所有国际关系。2018年与其他多个早期习近平时代词汇同步达峰，此后显著下降。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">百年未有之大变局</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">Great changes unseen in a century</span> <span class="cohort-badge cohort-trade" style="margin-left:0.4rem;">Trade war era · Peak 2021</span></summary>
+        <div class="expand-body">An era-framing term introduced around 2017–18, asserting that the world is undergoing the most profound geopolitical transformation in a hundred years — implying both opportunity and danger for China. Usage surged during the trade war and COVID years, peaked in 2021, and has since declined as the term may have run its slogan lifecycle. See figure below. <span class="zh">约于2017–18年出现的时代定性词汇，主张世界正经历百年来最深刻的地缘政治变革，既蕴含机遇，也潜藏危险。在贸易战和新冠疫情期间大幅攀升，2021年达峰，此后随口号生命周期走向终结而逐渐下降。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">走近世界舞台中央</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">Moving toward centre stage</span> <span class="cohort-badge cohort-early" style="margin-left:0.4rem;">Early Xi · Peak 2018</span></summary>
+        <div class="expand-body">A triumphalist framing of China's rising global role, prominent at the 19th Party Congress in 2017. Asserts that China is naturally assuming a central position in world affairs. Peaked in 2018 and has since declined sharply — consistent with the broader pattern of early Xi slogans giving way to more defensive language as US-China tensions mounted. <span class="zh">一种宣扬中国国际地位提升的话语框架，在2017年十九大期间尤为突出。主张中国正自然而然地走向世界舞台中心。2018年达峰后急剧下降，与早期习近平时代口号让位于更具防御性话语的整体规律相符。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">国际体系 / 战后国际秩序</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">International system / Post-war international order</span> <span class="cohort-badge cohort-trade" style="margin-left:0.4rem;">Rising · new high 2025</span></summary>
+        <div class="expand-body">Two terms that have surged together since 2022, reaching new highs in 2025. Both are used to invoke the institutional framework built after 1945 — in particular to accuse the United States of undermining the very order it helped construct. The shift from aspirational sloganeering to institutional-defensive language is one of the clearest trends in the corpus. <span class="zh">两个自2022年起同步飙升、2025年创历史新高的词汇。均用于援引1945年后建立的制度框架，尤其是指责美国破坏其亲手构建的秩序。从充满抱负的口号转向制度防御性话语，是语料库中最清晰的趋势之一。</span></div>
+      </details>
+      <details class="expand-item">
+        <summary><span style="font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:#1a2744;margin-right:0.5rem;">霸权主义</span> <span style="font-weight:400;color:#555;font-size:0.85rem;">Hegemonism</span> <span class="cohort-badge cohort-pre" style="margin-left:0.4rem;">Pre-Xi · resurging 2025</span></summary>
+        <div class="expand-body">One of the oldest critical terms in the corpus, with roots in Mao-era foreign policy language targeting Soviet "social imperialism" and US dominance. Largely declined in the Jiang/Hu era as China sought engagement, but resurged sharply in 2025 in the context of Trump's second term and US tariff and military pressure. Its return signals a rhetorical register shift back to confrontational framing. <span class="zh">语料库中历史最悠久的批判性词汇之一，根植于毛泽东时代针对苏联"社会帝国主义"和美国霸权的外交话语。在江泽民和胡锦涛执政期间随中国寻求接触而大幅衰退，但2025年在特朗普第二任期及美国关税与军事压力背景下急剧复苏。</span></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY OF SHARED FUTURE CHART -->
+<section id="csf">
+  <div class="container">
+    <div class="section-label">Term focus · 词汇聚焦</div>
+    <h2>人类命运共同体 — Community of shared future
+      <span class="zh">习近平核心外交概念的使用频率</span>
+    </h2>
+    <p style="font-size:0.9rem;color:#555;">Annual count of People's Daily articles containing 人类命运共同体 ("community of shared future / mankind").</p>
+    <div class="chart-wrap" style="height:260px;">
+      <canvas id="csf-chart"></canvas>
+    </div>
+    <p class="chart-note">Source: People's Daily archive. Counts reflect articles containing the exact term 人类命运共同体. Note: counts here include <em>all</em> articles containing the term, not only those that also contain 国际秩序.</p>
+  </div>
+</section>
+
+<!-- GC / NTR CHART -->
+<section id="gc-ntr">
+  <div class="container">
+    <div class="section-label">Term focus · 词汇聚焦</div>
+    <h2>百年大变局 &amp; 新型国际关系 — Two early-Xi slogans
+      <span class="zh">两个习近平时代口号的生命周期</span>
+    </h2>
+    <p style="font-size:0.9rem;color:#555;">Annual count of People's Daily articles containing 百年未有之大变局 ("great changes unseen in a century") and 新型国际关系 ("new type of international relations").</p>
+    <div class="chart-wrap" style="height:280px;">
+      <canvas id="gc-ntr-chart"></canvas>
+    </div>
+    <p class="chart-note">Source: People's Daily archive.</p>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="section-label">About this site · 关于本站</div>
+    <h2>Data and methods
+      <span class="zh">数据与方法</span>
+    </h2>
+    <div class="about-box">
+      <p>This site presents findings from a systematic content analysis of People's Daily (人民日报) and Xinhua (新华社) coverage of the international order from the 1980s to 2026.</p>
+      <p>Articles were identified by searching for 国际秩序 (<em>guójì zhìxù</em>, "international order") and thirteen related terms across the full People's Daily archive. Each article was classified for stance using a four-category scheme (Defend / Reform / Revisionist / Defend-and-Reform), developed and validated by the research team.</p>
+      <p><strong>Corpus size:</strong> 9,050 People's Daily articles classified; 1,999 Xinhua articles (cross-validation corpus).</p>
+      <p><strong>Data sources:</strong> paper.people.com.cn (2020–2024), data.people.com.cn (archival), scraped news site (2025–). Some access gaps remain (December 2024 – August 2025).</p>
+      <p><strong>Status:</strong> Preliminary research. Classifications are subject to revision.</p>
+      <p style="margin-bottom:0;"><strong>Related:</strong> <a href="https://jamiegjo.github.io/chinamfa.github.io">MFA press conference analysis →</a></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Preliminary research · Data updated April 2026 · <a href="https://jamiegjo.github.io/chinamfa.github.io">MFA press conference site</a></p>
+  </div>
+</footer>
+
+<script>
+fetch('data/pd_by_year.json')
+  .then(r => r.json())
+  .then(data => {
+    // Only show 1990 onward for legibility
+    const filtered = data.filter(d => d.year >= 1990 && d.year <= 2025);
+    const labels = filtered.map(d => d.year);
+
+    const ctx = document.getElementById('stance-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Defend 维护',
+            data: filtered.map(d => d.Defend),
+            backgroundColor: '#2471a3',
+            stack: 'stance'
+          },
+          {
+            label: 'Reform 改革',
+            data: filtered.map(d => d.Reform),
+            backgroundColor: '#1e8449',
+            stack: 'stance'
+          },
+          {
+            label: 'Revisionist 修正',
+            data: filtered.map(d => d.Revisionist),
+            backgroundColor: '#d4ac0d',
+            stack: 'stance'
+          },
+          {
+            label: 'Defend-and-Reform',
+            data: filtered.map(d => d['Defend-and-Reform']),
+            backgroundColor: '#7d3c98',
+            stack: 'stance'
+          },
+          {
+            label: 'Insufficient signal',
+            data: filtered.map(d => d.total - d.Defend - d.Reform - d.Revisionist - d['Defend-and-Reform']),
+            backgroundColor: '#ddd',
+            stack: 'stance'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false  // using custom legend above
+          },
+          tooltip: {
+            callbacks: {
+              afterBody: ctx => {
+                const idx = ctx[0].dataIndex;
+                const d = filtered[idx];
+                const classified = d.Defend + d.Reform + d.Revisionist + d['Defend-and-Reform'];
+                const defPct = classified ? Math.round((d.Defend / classified) * 100) : 0;
+                const refPct = classified ? Math.round((d.Reform / classified) * 100) : 0;
+                return [`—`, `Of classified: ${defPct}% Defend, ${refPct}% Reform`];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { font: { size: 11 } },
+            grid: { display: false }
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            title: { display: true, text: 'Article count', font: { size: 11 } },
+            ticks: { font: { size: 11 } }
+          }
+        }
+      }
+    });
+  })
+  .catch(err => {
+    document.querySelector('.chart-wrap').innerHTML =
+      '<p style="padding:2rem;color:#666;font-family:sans-serif;">Chart data could not be loaded. If running locally, use a local server (see README).</p>';
+  });
+
+// Community of shared future chart
+fetch('data/term_csf.json')
+  .then(r => r.json())
+  .then(data => {
+    const ctx = document.getElementById('csf-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.year),
+        datasets: [{
+          label: '人类命运共同体 articles',
+          data: data.map(d => d.n),
+          backgroundColor: '#1e8449',
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `Articles: ${ctx.raw}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: { beginAtZero: true, ticks: { font: { size: 11 } },
+               title: { display: true, text: 'Article count', font: { size: 11 } } }
+        }
+      }
+    });
+  });
+
+// Great changes / new type of IR chart
+fetch('data/term_gc_ntr.json')
+  .then(r => r.json())
+  .then(({ gc, ntr }) => {
+    // Build a unified year range
+    const allYears = [...new Set([...gc.map(d => d.year), ...ntr.map(d => d.year)])].sort();
+    const gcMap = Object.fromEntries(gc.map(d => [d.year, d.n]));
+    const ntrMap = Object.fromEntries(ntr.map(d => [d.year, d.n]));
+
+    const ctx = document.getElementById('gc-ntr-chart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: allYears,
+        datasets: [
+          {
+            label: '百年未有之大变局',
+            data: allYears.map(y => gcMap[y] || 0),
+            backgroundColor: '#7d3c98',
+            borderWidth: 0
+          },
+          {
+            label: '新型国际关系',
+            data: allYears.map(y => ntrMap[y] || 0),
+            backgroundColor: '#2471a3',
+            borderWidth: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'top',
+                    labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+          tooltip: { mode: 'index' }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: { beginAtZero: true, ticks: { font: { size: 11 } },
+               title: { display: true, text: 'Article count', font: { size: 11 } } }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>
