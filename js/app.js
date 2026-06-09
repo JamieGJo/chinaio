@@ -211,12 +211,12 @@ function terms(csf, gcntr){
 /* ---------- term definitions ---------- */
 function termDefs(){
   const T=[
-   ['国际秩序','International order','The core search term — tracked across the full archive. The balance of stances toward it is the central story of this site.'],
-   ['人类命运共同体','Community of shared future','Xi Jinping\'s signature concept (from ~2013, amplified 2015). A vision of order grounded in shared destiny and multilateral cooperation; enshrined in UN resolutions.'],
-   ['新型国际关系','New type of international relations','An early-Xi slogan for great-power relations without conflict or confrontation. Peaked around 2018 and declined.'],
-   ['百年未有之大变局','Great changes unseen in a century','An era-framing term (from ~2017–18): the world\'s most profound transformation in a hundred years. Surged through the trade-war and COVID years, peaked 2021.'],
-   ['战后国际秩序 / 国际体系','Post-war order / international system','Institutional-defensive terms that keep climbing — invoking the framework built after 1945, often to argue the US is undermining the order it built.'],
-   ['霸权主义','Hegemonism','One of the oldest critical terms; faded in the Jiang/Hu era, resurging from 2025 amid renewed US-China tension.'],
+   ['国际秩序','International order','The core search term — tracked across the full archive.'],
+   ['人类命运共同体','Community of shared future','Xi Jinping\'s signature concept (from ~2013, amplified 2015); a vision of order grounded in shared destiny and multilateral cooperation, referenced in UN resolutions.'],
+   ['新型国际关系','New type of international relations','An early-Xi slogan for great-power relations without conflict or confrontation; peaks around 2018 in the data.'],
+   ['百年未有之大变局','Great changes unseen in a century','An era-framing term (from ~2017–18): "the most profound changes in a century". Rises through the trade-war and COVID years, peaks 2021.'],
+   ['战后国际秩序 / 国际体系','Post-war order / international system','Terms invoking the framework built after 1945; rising in recent years.'],
+   ['霸权主义','Hegemonism','One of the oldest critical terms; faded in the Jiang/Hu era, rising again from 2025.'],
   ];
   $('#term-defs').innerHTML = T.map(([zh,en,body])=>
     `<details><summary><span class="termname">${zh}</span> <span class="sans" style="font-weight:400;color:#6B7280;font-size:.82rem">${en}</span></summary><div class="body">${body}</div></details>`).join('');
@@ -225,11 +225,11 @@ function termDefs(){
 /* ---------- stance definitions ---------- */
 function stanceDefs(){
   const D=[
-   ['Defend','维护',C.Defend,'Defends the existing order against challenge — typically by treating the current order as legitimate and worth preserving. The modal stance from 2013, peaking around 2021.'],
-   ['Reform','改革',C.Reform,'Calls for gradual change <em>within</em> the order — more voice for the Global South, more equitable economic governance — without advocating replacement. Dominant before Xi; recovers after 2022.'],
-   ['Defend-and-Reform','维护兼改革',C['Defend-and-Reform'],'Both defends the order and calls for reform within it — common in longer analytical texts that acknowledge flaws while rejecting wholesale replacement.'],
-   ['Revisionist','修正',C.Revisionist,'Advocates overturning or replacing the order with an alternative system — e.g. explicitly calling for a "new order". Common before the 2000s; near-zero after 2014.'],
-   ['Accusatory','指责',C.Accusatory,'Names a third party — most often the United States — as the order\'s wrecker. Distinct from China advocating change itself. Surges in 2025.'],
+   ['Defend','维护',C.Defend,'Defends the existing order against challenge — typically by treating the current order as legitimate and worth preserving.'],
+   ['Reform','改革',C.Reform,'Calls for gradual change <em>within</em> the order — more voice for the Global South, more equitable economic governance — without advocating replacement.'],
+   ['Defend-and-Reform','维护兼改革',C['Defend-and-Reform'],'Both defends the order and calls for reform within it — common in longer texts that acknowledge flaws while rejecting wholesale replacement.'],
+   ['Revisionist','修正',C.Revisionist,'Advocates overturning or replacing the order with an alternative system — e.g. explicitly calling for a "new order".'],
+   ['Accusatory','指责',C.Accusatory,'Names a third party — most often the United States — as undermining the order. Distinct from China advocating change itself.'],
   ];
   $('#stance-defs').innerHTML = D.map(([en,zh,col,body])=>
     `<details><summary><span class="chip c-${en.replace(/ /g,'')}">${en}</span> <span style="color:${col}">${zh}</span></summary><div class="body">${body}</div></details>`).join('');
@@ -238,7 +238,7 @@ function stanceDefs(){
 /* ---------- UNGA ---------- */
 function ungaSection(unga, stats){
   if(unga.summary) $('#unga-lead').innerHTML = unga.summary +
-    ` Across People's Daily 2010–2025, the Revisionist share averages just <b>${unga.pd_revisionist_mean}%</b>; at the UN podium it is zero.`;
+    ` Across People's Daily 2010–2025, the Revisionist share averages <b>${unga.pd_revisionist_mean}%</b>; in these UN speeches it is zero.`;
   $('#unga-quotes').innerHTML = (unga.years||[]).map(q=>
     `<div class="card" style="padding:1rem 1.2rem">
       <div class="tags" style="font-family:Inter,sans-serif;font-size:.78rem;color:#6B7280">${q.y} · ${q.speaker}</div>

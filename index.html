@@ -17,7 +17,7 @@
 <div class="nav"><div class="container">
   <div class="brand">中国与国际秩序 <span class="dot">·</span> <span class="full">China &amp; the International Order</span></div>
   <div class="links">
-    <a href="#arc">The arc</a>
+    <a href="#arc">Stance over time</a>
     <a href="#audience">Who it addresses</a>
     <a href="#context">Over time</a>
     <a href="#worddeed">Word vs deed</a>
@@ -33,21 +33,21 @@
   <div class="kicker">People's Daily · 人民日报 · 1950–2026</div>
   <h1>How China talks about<br>the international order</h1>
   <span class="zh-title">中国官方媒体的国际秩序话语</span>
-  <p class="thesis">Every <em>People's Daily</em> article mentioning <span class="zh">国际秩序</span> ("international order") since 1950, read by a language model and coded for its <b>stance</b>, the <b>audience</b> it addresses, and its <b>theme</b>. This site lets you watch the patterns shift over time — and read the articles behind them yourself.</p>
+  <p class="thesis">Every <em>People's Daily</em> article mentioning <span class="zh">国际秩序</span> ("international order") since 1950, read by a language model and coded for its <b>stance</b>, the <b>audience</b> it addresses, and its <b>theme</b>. This site lets you see how the coding varies over time — and read the articles behind it yourself.</p>
   <div class="stats" id="hero-stats">
     <div class="stat"><div class="num" id="s-articles">5,074</div><div class="lbl">articles coded for stance on the international order</div></div>
-    <div class="stat"><div class="num" id="s-usgap">43% vs 2%</div><div class="lbl">Accusatory share toward the US vs the Global South — China blames the West, reforms with the South</div></div>
-    <div class="stat"><div class="num" id="s-rev">40% → 1%</div><div class="lbl">share calling to replace the order, then (pre-2005) and now (2018+)</div></div>
-    <div class="stat"><div class="num">defend</div><div class="lbl">the modal stance since 2013 — China became the order's loudest defender in word</div></div>
+    <div class="stat"><div class="num" id="s-usgap">43% vs 2%</div><div class="lbl">Accusatory share of articles toward the US vs the Global South minilaterals</div></div>
+    <div class="stat"><div class="num" id="s-rev">40% → 1%</div><div class="lbl">share of articles coded Revisionist (calling to replace the order): pre-2005 vs 2018+</div></div>
+    <div class="stat"><div class="num">defend</div><div class="lbl">the most common coded stance since 2013</div></div>
   </div>
   <p class="meta">Descriptive research preview · data updated <span id="s-updated">2026-06-06</span> · explore, don't take our word for it</p>
 </div></header>
 
 <!-- THE ARC -->
 <section id="arc"><div class="container">
-  <div class="kicker">The arc · 立场演变</div>
-  <h2>Four stances, one long shift<span class="zh">从"建立新秩序"到"维护现有秩序"</span></h2>
-  <p class="lead">Each article is coded into one stance toward the order. The mix has moved through three eras — from demanding a <span style="color:var(--rev)">new order</span>, to reforming within it, to <span style="color:var(--defend)">defending</span> it and <span style="color:var(--acc)">accusing</span> others of wrecking it. Toggle counts vs. share, and click any year to read that year's articles below.</p>
+  <div class="kicker">Stance over time · 各年立场</div>
+  <h2>Stance toward the order, by year<span class="zh">各年立场分布</span></h2>
+  <p class="lead">Each article is coded into one stance toward the order. Toggle between counts, share, and flow, and click any year to read that year's articles below.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem">
       <div class="legend" id="arc-legend"></div>
@@ -57,32 +57,32 @@
     <p class="chart-note">People's Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.</p>
   </div>
   <div class="phases">
-    <div class="phase"><div class="pl" style="color:var(--reform)">Reform era · pre-2013</div><p>China pushes for a "new international political and economic order" — change <em>within</em> the system, more voice for the developing world. Outright "replace the order" language fades after the 1990s.</p></div>
-    <div class="phase"><div class="pl" style="color:var(--defend)">Defend era · 2013–2022</div><p>From Xi's accession, <b>Defend</b> becomes modal and peaks around 2021. China positions itself as guardian of the UN-centred order against perceived Western violations.</p></div>
-    <div class="phase"><div class="pl" style="color:var(--acc)">Accusatory turn · 2023–</div><p>Reform recovers, and a sharp rise in <b>Accusatory</b> language naming a third party — most often the United States — as the order's wrecker, highest in 2025.</p></div>
+    <div class="phase"><div class="pl" style="color:var(--reform)">Pre-2013</div><p>Reform and "new international order" language is most common in the coded articles; explicit calls to replace the order decline after the 1990s.</p></div>
+    <div class="phase"><div class="pl" style="color:var(--defend)">2013–2022</div><p><b>Defend</b> is the most common coded stance, peaking around 2021.</p></div>
+    <div class="phase"><div class="pl" style="color:var(--acc)">2023–</div><p>Reform recovers and <b>Accusatory</b> language rises, most often naming the United States; highest in 2025.</p></div>
   </div>
 </div></section>
 
 <!-- WHO IT ADDRESSES -->
 <section id="audience"><div class="container">
   <div class="kicker">Who it addresses · 面向不同对象</div>
-  <h2>China says different things to different audiences<span class="zh">对不同对象，说法不同</span></h2>
-  <p class="lead">Tagging each article by the main foreign actor it concerns reveals that the order narrative is tailored to the relationship: <span style="color:var(--reform)">reform</span> toward the Global South, <span style="color:var(--acc)">blame</span> toward the West, defence toward the UN system and at home. Each bar is a stance composition — <b>click a row</b> to read those articles.</p>
+  <h2>Stance composition by audience<span class="zh">按对象划分的立场构成</span></h2>
+  <p class="lead">Each article is tagged by the main foreign actor it concerns. Each bar shows the stance composition for that audience (audiences with n≥30) — <b>click a row</b> to read those articles.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="legend" id="aud-legend"></div>
     <div class="audbars" id="aud-bars"></div>
     <p class="chart-note">People's Daily 国际秩序 articles with a classifiable stance, grouped by main foreign actor (audiences with n≥30). Shares of each stance. Descriptive — the actor and the stance are not independently assigned.</p>
   </div>
   <div class="callout" id="russia-callout">
-    <b>The exception — Russia.</b> China blames the West (US &amp; allies ~42% Accusatory) but almost never Russia. And across the 2022 invasion of Ukraine — a breach of the very UN-Charter order China says it defends — Russia's blame share stays flat (<span id="ru-pre">6%</span> before → <span id="ru-post">6%</span> after), while the West's rises. Blame tracks the relationship, not the conduct. <a href="#explorer" onclick="setFilter({a:'Russia'})">See the Russia articles →</a>
+    <b>Russia.</b> Accusatory share of articles toward Russia is low and stays flat across the 2022 invasion of Ukraine (<span id="ru-pre">6%</span> before → <span id="ru-post">6%</span> after); Accusatory share toward the US and allies is ~42%. <a href="#explorer" onclick="setFilter({a:'Russia'})">See the Russia articles →</a>
   </div>
 </div></section>
 
 <!-- OVER TIME / CONTEXT -->
 <section id="context"><div class="container">
-  <div class="kicker">Over time · 与外部环境同步</div>
-  <h2>The order talk moves with the world outside<span class="zh">话语与外部环境同步变化</span></h2>
-  <p class="lead">Two descriptive overlays. China's volume of order-talk tracks how isolated the United States is at the UN (the average distance of UN members from the US in roll-call votes). Both rise around 2018 and again, sharply, in 2025. We show the association and let you judge it.</p>
+  <div class="kicker">Over time · 随时间变化</div>
+  <h2>Order-talk volume and US isolation at the UN<span class="zh">国际秩序话语数量与美国在联合国的孤立</span></h2>
+  <p class="lead">Two series shown together: the number of People's Daily 国际秩序 articles per year, and US isolation at the UN (the average distance of UN members from the US in roll-call votes). Association only — read the two axes and judge for yourself.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="chart-wrap"><canvas id="context-chart"></canvas></div>
     <p class="chart-note">Left axis: US isolation at the UN (world-mean ideal-point distance from the US; Voeten roll-call data). Right axis: number of People's Daily 国际秩序 articles per year. Hollow points = thin vote-years (e.g. 2024, 8 US votes) shown but unreliable. Association, not a claim of cause.</p>
@@ -92,8 +92,8 @@
 <!-- WORD VS DEED -->
 <section id="worddeed"><div class="container">
   <div class="kicker">Word vs deed · 言与行</div>
-  <h2>Revisionist in deed, defensive in word<span class="zh">行动上另起炉灶，话语上维护秩序</span></h2>
-  <p class="lead">As China builds parallel institutions — BRICS, the SCO, the CIPS payments network, the renminbi's reach — the <span style="color:var(--rev)">share of articles calling to replace the order</span> stays near zero. The deeds run one way; the words run the other. Readers can weigh what that gap means.</p>
+  <h2>Parallel-institution building and Revisionist language<span class="zh">另建机制的行为与"修正"话语</span></h2>
+  <p class="lead">An index of parallel-institution building (BRICS, the SCO, the CIPS payments network, renminbi reach) shown against the <span style="color:var(--rev)">share of articles coded Revisionist</span> (calling to replace the order). Read the two series and weigh what they show.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="chart-wrap sm"><canvas id="wd-chart"></canvas></div>
     <p class="chart-note">Left axis: a normalised index of parallel-institution building (BRICS/SCO membership, CIPS participants, RMB payment share, NDB lending). Right axis: % of order-articles coded Revisionist (calling to replace the order). Behaviour indicators are hand-assembled from the public record; descriptive.</p>
@@ -122,7 +122,7 @@
 <section id="terms"><div class="container">
   <div class="kicker">Key terms · 关键词</div>
   <h2>The vocabulary, and its lifecycles<span class="zh">话语词汇及其生命周期</span></h2>
-  <p class="lead">Beyond 国际秩序 itself, a family of slogans rises and falls. Xi-era coinages tend to follow a ~5-year arc; institutional-defensive terms keep climbing. Click any term for context.</p>
+  <p class="lead">Beyond 国际秩序 itself, a family of related terms rises and falls over time. Click any term for its definition and dates.</p>
   <div class="row two" style="margin-top:1.1rem">
     <div class="card chart-card">
       <h3 class="zh" style="font-size:1.05rem">人类命运共同体 <span class="sans" style="font-weight:400;color:var(--muted);font-size:.8rem">Community of shared future</span></h3>
@@ -142,7 +142,7 @@
 <section id="abroad"><div class="container">
   <div class="kicker">Abroad · 对外讲话</div>
   <h2>What China says to the world<span class="zh">在联合国讲台上的表述</span></h2>
-  <p class="lead" id="unga-lead">In its UN General Assembly speeches, China's order language is defend-and-reform every year — and carries no overt call to replace the order, against a People's Daily Revisionist share that itself sits low.</p>
+  <p class="lead" id="unga-lead">In its UN General Assembly speeches (2010–2025), China's order language is coded Defend-and-Reform every year, with no overt call to replace the order.</p>
   <div class="row two" style="margin-top:1rem" id="unga-quotes"></div>
 </div></section>
 
