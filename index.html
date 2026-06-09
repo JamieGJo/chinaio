@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/styles.css?v=20260609e">
+<link rel="stylesheet" href="css/styles.css?v=20260609f">
 </head>
 <body>
 
@@ -24,6 +24,7 @@
     <a href="#explorer">Explore articles</a>
     <a href="#terms">Key terms</a>
     <a href="#abroad">Abroad</a>
+    <a href="#english">In English</a>
     <a href="#about">About</a>
   </div>
 </div></div>
@@ -145,6 +146,30 @@
   <div class="row two" style="margin-top:.4rem" id="unga-quotes"></div>
 </div></section>
 
+<!-- IN ENGLISH -->
+<section id="english"><div class="container">
+  <div class="kicker">In English · 对外英文媒体</div>
+  <h2>The same order, in English<span class="zh">英文媒体中的国际秩序</span></h2>
+  <p class="lead" id="english-intro"></p>
+  <div class="row two" style="margin-top:1.1rem">
+    <div class="card chart-card">
+      <h3 class="sans" style="font-size:1rem;margin:0 0 .2rem">Stance composition by source</h3>
+      <div class="legend" id="enComp-legend"></div>
+      <div class="chart-wrap sm"><canvas id="english-comp-chart"></canvas></div>
+      <p class="chart-note">Stance mix of People's Daily (Chinese), People's Daily English, and China Daily, all coded on the same scheme, plus China's UN speeches for reference. China Daily and the English edition carry almost no overt Revisionist language.</p>
+    </div>
+    <div class="card chart-card">
+      <h3 class="sans" style="font-size:1rem;margin:0 0 .2rem">One stance's share over time, by source</h3>
+      <div class="toggle" id="enStance-toggle" style="flex-wrap:wrap"></div>
+      <div class="chart-wrap sm"><canvas id="english-time-chart"></canvas></div>
+      <p class="chart-note">Share of each source's articles coded with the selected stance, per year (2014–2026, the window where all three overlap). Pick a stance above.</p>
+    </div>
+  </div>
+  <h3 class="sans" style="font-size:1rem;margin:1.4rem 0 .2rem">Illustrative English passages</h3>
+  <div class="row two" style="margin-top:.4rem" id="english-quotes"></div>
+  <p class="chart-note" style="margin-top:.7rem">English corpora: China Daily (n=2,654, 2001–2026) and People's Daily English (n=2,345, 2014–2026), found by the same order vocabulary and coded on the same five-stance scheme. They are also browsable in the explorer below via the <b>source</b> filter — and, being in English already, need no translation.</p>
+</div></section>
+
 <!-- ABOUT -->
 <section id="about"><div class="container about">
   <div class="kicker">About &amp; methods · 数据与方法</div>
@@ -163,8 +188,9 @@
 <section id="explorer"><div class="container explorer">
   <div class="kicker">Explore the articles · 检索原文</div>
   <h2>Read the corpus yourself<span class="zh">自行检索全部文章</span></h2>
-  <p class="lead">Every coded article. Filter by stance, audience, theme, and year, or search the headlines. Each card shows the driving sentence — the actual phrase about 国际秩序 — an English translation, why the model coded it that way, a link to the People's Daily archive (may need a subscription), and an open-web search so you can find the piece either way.</p>
+  <p class="lead">Every coded article — Chinese People's Daily plus the English-language sources (People's Daily English and China Daily). Filter by source, stance, audience, theme, and year, or search the headlines. Each card shows the driving sentence — the actual phrase about 国际秩序 — an English translation (for the Chinese articles), why the model coded it that way, a link to the archive, and an open-web search.</p>
   <div class="controls">
+    <select id="f-src"><option value="">All sources</option></select>
     <select id="f-stance"><option value="">All stances</option></select>
     <select id="f-aud"><option value="">All audiences</option></select>
     <select id="f-dom"><option value="">All themes</option></select>
@@ -182,6 +208,6 @@
   <span><a href="https://jamiegjo.github.io/chinamfa/">MFA site</a> · Classifications subject to revision</span>
 </div></footer>
 
-<script src="js/app.js?v=20260609e"></script>
+<script src="js/app.js?v=20260609f"></script>
 </body>
 </html>

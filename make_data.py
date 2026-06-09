@@ -62,6 +62,37 @@ for _, r in df.iterrows():
     if he: rec["he"] = clip(he, 160)   # English headline
     if qe: rec["qe"] = clip(qe, 320)   # English quote
     recs.append(rec)
+
+# English-language sources, appended with a `src` tag (already in English).
+EN_SOURCES = [
+    ("People's Daily English", CLS/"2026-06-08_english-pd_llm-coded.csv"),
+    ("China Daily",            CLS/"2026-06-08_chinadaily_llm-coded.csv"),
+]
+for srclabel, path in EN_SOURCES:
+    if not path.exists():
+        print(f"  (skipped {srclabel}: file missing)"); continue
+    ed = pd.read_csv(path, dtype=str); ed["dt"] = pd.to_datetime(ed["date"], errors="coerce")
+    ed = ed[ed["dt"].notna()]
+    n0 = len(recs)
+    for _, r in ed.iterrows():
+        st = r.get("llm_stance")
+        val = r.get("llm_valence")
+        try: v = round(float(val)) if val not in (None, "", "nan") and pd.notna(val) else None
+        except Exception: v = None
+        recs.append({
+            "id": f"en_{r['id']}", "src": srclabel,
+            "y": int(r["dt"].year), "d": r["dt"].strftime("%Y-%m-%d"),
+            "h": clip(r.get("title"), 110),
+            "s": st if st in STANCES else "Other",
+            "a": "—", "dm": "—",
+            "t": clip(r.get("llm_tone"), 14), "v": v,
+            "sec": clip(r.get("section"), 10),
+            "q": clip(r.get("llm_quote"), 200),
+            "r": clip(r.get("llm_rationale"), 200),
+            "u": r.get("url") if pd.notna(r.get("url")) else "",
+        })
+    print(f"  appended {len(recs)-n0} {srclabel} articles")
+
 recs.sort(key=lambda x: x["d"], reverse=True)
 dump("articles.json", recs)
 
@@ -236,5 +267,52 @@ ungdc_out = {
   "china_rev_years": sorted(int(y) for y in chn[chn["llm_stance"]=="Revisionist"]["year"].unique()),
 }
 dump("ungdc.json", ungdc_out)
+
+# ---------- 11. English-language outlets vs Chinese (audience/language) ----------
+en_pd = pd.read_csv(CLS/"2026-06-08_english-pd_llm-coded.csv", dtype=str)
+cd    = pd.read_csv(CLS/"2026-06-08_chinadaily_llm-coded.csv", dtype=str)
+for d_ in (en_pd, cd):
+    d_["year"] = pd.to_datetime(d_["date"], errors="coerce").dt.year
+def comp(d_):
+    s = d_[d_["llm_stance"].isin(STANCES)]
+    return {st: round((s["llm_stance"]==st).mean()*100,1) for st in STANCES} if len(s) else {}
+def by_year(d_, years):
+    s = d_[d_["llm_stance"].isin(STANCES)]
+    out = []
+    for y in years:
+        sub = s[s["year"]==y]
+        out.append({"year": int(y), "n": int(len(sub)),
+                    **{st: (round((sub["llm_stance"]==st).mean()*100,1) if len(sub) else None) for st in STANCES}})
+    return out
+YRS = list(range(2014, int(df.year.max())+1))   # window where all three overlap
+english_out = {
+  "sources": [
+    {"key":"pd_zh", "label":"People's Daily (Chinese)", "n": int(len(pd_sig))},
+    {"key":"pd_en", "label":"People's Daily English",   "n": int(en_pd["llm_stance"].isin(STANCES).sum())},
+    {"key":"cd",    "label":"China Daily",              "n": int(cd["llm_stance"].isin(STANCES).sum())},
+  ],
+  "dist": {
+    "pd_zh": {st: round((pd_sig["llm_stance"]==st).mean()*100,1) for st in STANCES},
+    "pd_en": comp(en_pd), "cd": comp(cd), "unga": sdist(chn),
+  },
+  "by_year": {
+    "pd_zh": by_year(sig.assign(year=sig["year"]), YRS),
+    "pd_en": by_year(en_pd, YRS), "cd": by_year(cd, YRS),
+  },
+}
+# a few illustrative English quotes (highest-confidence, non-empty quote, per source×key stance)
+def pick(lbl, d_, stance, k=1):
+    s = d_[(d_["llm_stance"]==stance) & d_["llm_quote"].notna() & (d_["llm_quote"].astype(str).str.len()>30)
+           & (d_["year"].notna())]
+    s = s.sort_values("year", ascending=False).head(k)
+    return [{"src": lbl, "y": int(r["year"]), "stance": stance, "title": clip(r.get("title"),100),
+             "quote": clip(r.get("llm_quote"),240)} for _,r in s.iterrows()]
+QSRC = [("China Daily", cd), ("People's Daily English", en_pd)]
+quotes = []
+for lbl, d_ in QSRC:
+    for stance in ["Accusatory","Defend"]:
+        quotes += pick(lbl, d_, stance, 1)
+english_out["quotes"] = quotes
+dump("english.json", english_out)
 
 print("\nDONE — site data written to", OUT)

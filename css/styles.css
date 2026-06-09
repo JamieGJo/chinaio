@@ -114,6 +114,7 @@ section:last-of-type{border-bottom:none}
 .acard .why.open{display:block}
 .acard .en{display:none;font-family:'Inter',sans-serif;background:#f4f7fb;border-left:3px solid var(--defend);border-radius:4px;padding:.5rem .65rem;margin:.1rem 0}
 .acard .en.open{display:block}
+.acard .srctag{font-family:'Inter',sans-serif;font-size:.66rem;font-weight:600;color:#475569;background:#eef1f5;border:1px solid var(--line);border-radius:20px;padding:.06rem .5rem}
 .acard .en .en-h{font-size:.92rem;font-weight:600;color:#1a2336;line-height:1.4}
 .acard .en .en-q{font-size:.84rem;color:#52606e;font-style:italic;margin-top:.25rem;line-height:1.45}
 .acard .actions{display:flex;gap:.9rem;font-family:'Inter',sans-serif;font-size:.76rem;margin-top:.1rem}

@@ -9,14 +9,14 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609e';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609f';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
-  'word_deed.json','unga.json','terms.json','ungdc.json'].map(J))
-.then(([stats, sby, sbm, aud, usal, wd, unga, td, ungdc]) => {
+  'word_deed.json','unga.json','terms.json','ungdc.json','english.json'].map(J))
+.then(([stats, sby, sbm, aud, usal, wd, unga, td, ungdc, en]) => {
   hero(stats); arc(sby, sbm); audience(aud); context(usal); worddeed(wd);
-  terms(td); stanceDefs(); ungaSection(unga, ungdc, stats);
+  terms(td); stanceDefs(); ungaSection(unga, ungdc, stats); englishSection(en);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
 $('#ex-cards').innerHTML = '<p style="color:#9aa3ad;font-family:Inter,sans-serif">Loading the corpus…</p>';
@@ -176,23 +176,25 @@ let ALL=[], PAGE=24, shown=0, pendingFilter=null;
 function explorer(articles){
   ALL = articles;
   const uniq = (k)=>[...new Set(articles.map(a=>a[k]).filter(x=>x&&x!=='—'))];
+  fill('#f-src', ["People's Daily (Chinese)","People's Daily English","China Daily"]);
   fill('#f-stance', [...STANCES,'Other']);
   fill('#f-aud', uniq('a').sort());
   fill('#f-dom', uniq('dm').sort());
   fill('#f-year', uniq('y').sort((a,b)=>b-a));
-  ['#f-stance','#f-aud','#f-dom','#f-year'].forEach(s=>$(s).addEventListener('change',()=>render(true)));
+  ['#f-src','#f-stance','#f-aud','#f-dom','#f-year'].forEach(s=>$(s).addEventListener('change',()=>render(true)));
   $('#f-q').addEventListener('input', debounce(()=>render(true),180));
-  $('#f-reset').addEventListener('click',()=>{ ['#f-stance','#f-aud','#f-dom','#f-year','#f-q'].forEach(s=>$(s).value=''); render(true); });
+  $('#f-reset').addEventListener('click',()=>{ ['#f-src','#f-stance','#f-aud','#f-dom','#f-year','#f-q'].forEach(s=>$(s).value=''); render(true); });
   $('#ex-more').addEventListener('click',()=>render(false));
   if(pendingFilter){ const p=pendingFilter; pendingFilter=null; setFilter(p); } else render(true);
 }
 function fill(sel, vals){ const el=$(sel); vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); }); }
 function debounce(fn,ms){ let t; return (...a)=>{clearTimeout(t); t=setTimeout(()=>fn(...a),ms);}; }
 function current(){
-  const fs=$('#f-stance').value, fa=$('#f-aud').value, fd=$('#f-dom').value, fy=$('#f-year').value,
+  const fsrc=$('#f-src').value, fs=$('#f-stance').value, fa=$('#f-aud').value, fd=$('#f-dom').value, fy=$('#f-year').value,
         q=$('#f-q').value.trim().toLowerCase();
+  const srcOf = a => a.src || "People's Daily (Chinese)";
   return ALL.filter(a=>
-    (!fs || a.s===fs) && (!fa || a.a===fa) && (!fd || a.dm===fd) && (!fy || String(a.y)===fy) &&
+    (!fsrc || srcOf(a)===fsrc) && (!fs || a.s===fs) && (!fa || a.a===fa) && (!fd || a.dm===fd) && (!fy || String(a.y)===fy) &&
     (!q || (a.h&&a.h.toLowerCase().includes(q)) || (a.q&&a.q.toLowerCase().includes(q)) || (a.r&&a.r.toLowerCase().includes(q))));
 }
 function render(reset){
@@ -210,16 +212,19 @@ function card(a){
   const sc = a.s.replace(/ /g,'');
   const val = (a.v===null||a.v===undefined)?'':` · valence ${a.v>0?'+':''}${a.v}`;
   const hasEn = a.he || a.qe;
+  const isZh = !a.src;   // Chinese PD has no src; English sources carry one
+  const searchQ = isZh ? `"${a.h}" 人民日报` : `"${a.h}" ${a.src}`;
   return `<div class="acard">
     <div class="top"><span class="chip c-${sc}">${a.s}</span>
+      ${a.src?`<span class="srctag">${a.src}</span>`:''}
       ${a.a&&a.a!=='—'?`<span class="tags"><b>${a.a}</b></span>`:''}
       <span class="date">${a.d}</span></div>
     <h4>${esc(a.h)||'<span style=color:#aaa>(no headline)</span>'}</h4>
-    ${a.q?`<div class="quote zh">${esc(a.q)}</div>`:''}
+    ${a.q?`<div class="quote${isZh?' zh':''}">${esc(a.q)}</div>`:''}
     ${hasEn?`<div class="en">${a.he?`<div class="en-h">${esc(a.he)}</div>`:''}${a.qe?`<div class="en-q">"${esc(a.qe)}"</div>`:''}</div>`:''}
     <div class="tags">${a.dm&&a.dm!=='—'?`theme: <b>${a.dm}</b>`:''}${a.t?` · ${a.t}${val}`:''}${a.sec?` · ${a.sec}`:''}</div>
     ${a.r?`<div class="why">${esc(a.r)}</div>`:''}
-    <div class="actions">${hasEn?'<button class="en-btn">English</button>':''}${a.r?'<button class="why-btn">Why this code?</button>':''}${a.u?`<a href="${a.u}" target="_blank" rel="noopener" title="People's Daily archive (may need a subscription)">Source ↗</a>`:''}${a.h?`<a href="https://www.google.com/search?q=${encodeURIComponent('"'+a.h+'" 人民日报')}" target="_blank" rel="noopener" title="Find on the open web">Search web ↗</a>`:''}</div>
+    <div class="actions">${hasEn?'<button class="en-btn">English</button>':''}${a.r?'<button class="why-btn">Why this code?</button>':''}${a.u?`<a href="${a.u}" target="_blank" rel="noopener" title="Open the article">Source ↗</a>`:''}${a.h?`<a href="https://www.google.com/search?q=${encodeURIComponent(searchQ)}" target="_blank" rel="noopener" title="Find on the open web">Search web ↗</a>`:''}</div>
   </div>`;
 }
 window.setFilter = function(obj){
@@ -331,4 +336,53 @@ function ungaSection(unga, ungdc, stats){
     `<div class="card" style="padding:1rem 1.2rem">
       <div class="tags" style="font-family:Inter,sans-serif;font-size:.78rem;color:#6B7280">${q.y} · ${q.speaker}</div>
       <p style="font-size:.98rem;margin:.4rem 0 0;color:#33414f">"${q.quote}"</p></div>`).join('');
+}
+
+/* ---------- In English (China Daily + PD English vs Chinese) ---------- */
+const EN_SRC_COLORS = {pd_zh:'#22304a', pd_en:'#2E5E8C', cd:'#C8902A'};
+let enData, enTimeChart, enStance='Accusatory';
+function englishSection(en){
+  enData = en; const d = en.dist;
+  $('#english-intro').innerHTML =
+    `China's order vocabulary also appears in its English-language outlets, written largely for foreign readers and coded on the same scheme. ` +
+    `Both carry almost no overt Revisionist language (People's Daily English ${d.pd_en.Revisionist}%, China Daily ${d.cd.Revisionist}%, against ${d.pd_zh.Revisionist}% in the Chinese edition). ` +
+    `China Daily is the most Accusatory (${d.cd.Accusatory}%); People's Daily English leans most to Defend (${d.pd_en.Defend}%).`;
+
+  // composition by source (stacked 100%)
+  legend($('#enComp-legend'), STANCES);
+  const groups = [["People's Daily (Chinese)", d.pd_zh], ["People's Daily English", d.pd_en],
+                  ["China Daily", d.cd], ["China · UN", d.unga]];
+  new Chart($('#english-comp-chart').getContext('2d'),{ type:'bar',
+    data:{ labels:groups.map(g=>g[0]), datasets: STANCES.map(s=>({
+      label:s, data:groups.map(g=>g[1][s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
+      scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
+        y:{stacked:true, grid:{display:false}} } } });
+
+  // stance-over-time toggle
+  $('#enStance-toggle').innerHTML = STANCES.map(s=>`<button data-s="${s}" class="${s===enStance?'on':''}">${s}</button>`).join('');
+  $('#enStance-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); enStance=b.dataset.s; buildEnTime(); });
+  buildEnTime();
+
+  // illustrative quotes
+  $('#english-quotes').innerHTML = (en.quotes||[]).map(q=>
+    `<div class="card" style="padding:1rem 1.2rem">
+      <div class="tags" style="font-family:Inter,sans-serif;font-size:.74rem;color:#6B7280"><span class="chip c-${q.stance.replace(/ /g,'')}">${q.stance}</span> · ${q.src} · ${q.y}</div>
+      <p style="font-size:.94rem;margin:.45rem 0 0;color:#33414f">"${esc(q.quote)}"</p>
+      <div class="tags" style="margin-top:.3rem;font-size:.72rem;color:#9aa3ad">${esc(q.title)}</div></div>`).join('');
+}
+function buildEnTime(){
+  const en=enData, srcs=[['pd_zh',"People's Daily (Chinese)"],['pd_en',"People's Daily English"],['cd',"China Daily"]];
+  const labels = en.by_year.pd_zh.map(d=>d.year);
+  const ds = srcs.map(([k,lbl])=>({ label:lbl, data:en.by_year[k].map(d=>d[enStance]),
+    borderColor:EN_SRC_COLORS[k], backgroundColor:EN_SRC_COLORS[k], borderWidth:2.4, tension:.25, pointRadius:0, spanGaps:true }));
+  if(enTimeChart) enTimeChart.destroy();
+  enTimeChart = new Chart($('#english-time-chart').getContext('2d'),{ type:'line', data:{labels, datasets:ds},
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{position:'top', labels:{boxWidth:12, font:{size:10}, padding:8}},
+        tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw==null?'—':c.raw+'%'}` } } },
+      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
+        y:{beginAtZero:true, title:{display:true, text:enStance+' share (%)'}} } } });
 }
