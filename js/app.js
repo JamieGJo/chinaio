@@ -9,12 +9,13 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const J = f => fetch('data/'+f).then(r => r.json());
+const VER = '20260609';   // bump when data/ is regenerated, to bust browser cache
+const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
-Promise.all(['stats.json','stance_by_year.json','audience_stance.json','us_alienation.json',
+Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
   'word_deed.json','unga.json','term_csf.json','term_gc_ntr.json'].map(J))
-.then(([stats, sby, aud, usal, wd, unga, csf, gcntr]) => {
-  hero(stats); arc(sby); audience(aud); context(usal); worddeed(wd);
+.then(([stats, sby, sbm, aud, usal, wd, unga, csf, gcntr]) => {
+  hero(stats); arc(sby, sbm); audience(aud); context(usal); worddeed(wd);
   terms(csf, gcntr); termDefs(); stanceDefs(); ungaSection(unga, stats);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
@@ -27,6 +28,12 @@ function hero(s){
   $('#s-articles').textContent = fmt(s.n_articles);
   $('#s-usgap').textContent = `${s.us_accusatory_pct}% vs ${s.gs_accusatory_pct}%`;
   $('#s-rev').textContent = `${Math.round(s.rev_pre2005)}% → ${Math.round(s.rev_2018plus)}%`;
+  if(s.modal_stance_since2013){
+    $('#s-modal').textContent = s.modal_stance_since2013.toLowerCase();
+    $('#s-modal-lbl').textContent = `the most common coded stance since 2013 (${s.modal_stance_since2013_pct}% of coded articles)`;
+  }
+  const rw = document.getElementById('ru-west');
+  if(rw && s.west_accusatory_pct!=null) rw.textContent = `${s.west_accusatory_pct}%`;
   $('#s-updated').textContent = s.updated; $('#ft-updated').textContent = s.updated;
   $('#ab-n').textContent = fmt(s.n_articles);
 }
@@ -38,9 +45,13 @@ function legend(el, items){
 }
 
 /* ---------- arc chart ---------- */
-let arcChart, arcMode='count', arcData;
-function arc(sby){
+let arcChart, arcMode='count', arcData, arcMonthly;
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ARC_NOTE_YEAR = 'People\'s Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
+const ARC_NOTE_MONTH = 'Stance composition by calendar month, pooling all years (share of stance-coded articles; "Other" excluded). Shows seasonality — e.g. whether certain stances cluster around set-piece months. Not clickable.';
+function arc(sby, sbm){
   arcData = sby.filter(d => d.year>=1990 && d.year<=2025);
+  arcMonthly = sbm || [];
   legend($('#arc-legend'), [...STANCES,'Other']);
   buildArc('count');
   $('#arc-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return;
@@ -48,9 +59,11 @@ function arc(sby){
     buildArc(b.dataset.mode); });
 }
 function arcSeries(mode){
+  const isMonth = mode==='month';
+  const rows = isMonth ? arcMonthly : arcData;
   const set = [...STANCES,'Other'], isPct = mode!=='count';
   return set.map(s=>{
-    const data = arcData.map(d=>{
+    const data = rows.map(d=>{
       if(mode==='count') return d[s];
       const base = STANCES.reduce((a,k)=>a+d[k],0); // share of substantive stances
       return s==='Other'? 0 : (base? d[s]/base*100 : 0);
@@ -63,19 +76,23 @@ function arcSeries(mode){
 }
 function buildArc(mode){
   arcMode = mode;
+  const isMonth = mode==='month';
   const isPct = mode!=='count', isArea = mode==='area';
+  const rows = isMonth ? arcMonthly : arcData;
+  const labels = isMonth ? MONTHS : rows.map(d=>d.year);
+  const note = document.getElementById('arc-note'); if(note) note.innerHTML = isMonth ? ARC_NOTE_MONTH : ARC_NOTE_YEAR;
   if(arcChart) arcChart.destroy();
   arcChart = new Chart($('#arc-chart').getContext('2d'), {
     type: isArea?'line':'bar',
-    data:{ labels:arcData.map(d=>d.year), datasets:arcSeries(mode) },
+    data:{ labels, datasets:arcSeries(mode) },
     options:{ responsive:true, maintainAspectRatio:false,
       interaction: isArea?{mode:'index',intersect:false}:{intersect:true},
-      onClick:(e,els)=>{ if(els.length){ setFilter({y:String(arcData[els[0].index].year)});} },
+      onClick:(e,els)=>{ if(!isMonth && els.length){ setFilter({y:String(arcData[els[0].index].year)});} },
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:c=> isPct? `${c.dataset.label}: ${c.raw.toFixed(0)}%` : `${c.dataset.label}: ${c.raw}` } } },
       scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}},
         y:{ stacked:true, beginAtZero:true, max:isPct?100:undefined,
-            title:{display:true, text: isPct?'Share of stance-coded (%)':'Article count'} } } } });
+            title:{display:true, text: isPct?(isMonth?'Share of stance-coded (%), by month':'Share of stance-coded (%)'):'Article count'} } } } });
 }
 
 /* ---------- audience bars ---------- */
@@ -118,18 +135,38 @@ function context(usal){
         y1:{position:'right', title:{display:true,text:'PD articles / yr'}, grid:{display:false}, beginAtZero:true} } } });
 }
 
-/* ---------- word vs deed ---------- */
+/* ---------- word vs deed (aggregate or any single behaviour vs revisionist words) ---------- */
+let wdChart, wdSel='aggregate', wdData;
 function worddeed(wd){
-  const ctx=$('#wd-chart').getContext('2d');
-  new Chart(ctx,{ data:{ labels:wd.map(d=>d.year), datasets:[
-    { type:'line', label:'Parallel-building (deeds)', yAxisID:'y', data:wd.map(d=>d.parallel_build),
+  wdData = wd;
+  const opts = [{key:'aggregate', label:'Aggregate index'}, ...wd.components];
+  $('#wd-toggle').innerHTML = opts.map(o=>`<button data-k="${o.key}" class="${o.key==='aggregate'?'on':''}">${o.label}</button>`).join('');
+  $('#wd-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+    wdSel=b.dataset.k; buildWd(); });
+  buildWd();
+}
+function buildWd(){
+  const S=wdData.series, isAgg=wdSel==='aggregate';
+  const comp = wdData.components.find(c=>c.key===wdSel);
+  const label = isAgg ? 'Parallel-building (aggregate, deeds)' : comp.label+' (deed)';
+  const behData = S.map(d=> isAgg ? d.parallel_build : d[wdSel]);
+  const rawData = S.map(d=> isAgg ? null : d[wdSel+'_raw']);
+  if(wdChart) wdChart.destroy();
+  wdChart = new Chart($('#wd-chart').getContext('2d'),{ data:{ labels:S.map(d=>d.year), datasets:[
+    { type:'line', label, yAxisID:'y', data:behData,
       borderColor:'#C8902A', backgroundColor:'#C8902A', borderWidth:2.6, tension:.25, pointRadius:0, spanGaps:true },
-    { type:'line', label:'Calls to replace the order (words)', yAxisID:'y1', data:wd.map(d=>d.revisionist_pct),
+    { type:'line', label:'Calls to replace the order (words)', yAxisID:'y1', data:S.map(d=>d.revisionist_pct),
       borderColor:'#B23A48', backgroundColor:'#B23A48', borderWidth:2.6, borderDash:[5,3], tension:.25, pointRadius:0, spanGaps:true } ]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-      plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}} },
+      plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}},
+        tooltip:{ callbacks:{ label:c=>{
+          if(c.dataset.yAxisID==='y1') return `Revisionist share: ${c.raw}%`;
+          const raw=rawData[c.dataIndex];
+          return raw!=null ? `${label}: ${raw} (index ${c.raw})` : `${label}: index ${c.raw}`;
+        }}}},
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
-        y:{position:'left', title:{display:true,text:'Parallel-build index (0–100)'}, grid:{color:'#eee'}},
+        y:{position:'left', min:0, max:100, title:{display:true,text: isAgg?'Parallel-build index (0–100)':'Normalised level (0–100)'}, grid:{color:'#eee'}},
         y1:{position:'right', title:{display:true,text:'Revisionist share (%)'}, beginAtZero:true, grid:{display:false},
             suggestedMax:15} } } });
 }

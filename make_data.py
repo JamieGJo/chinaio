@@ -63,6 +63,16 @@ sby = [{"year":int(y), **{s:int(row[s]) for s in STANCES}, "Other":int(row["Othe
        for y,row in g.iterrows()]
 dump("stance_by_year.json", sby)
 
+# ---------- 2b. stance by calendar month (seasonality, all years pooled) ----------
+df["_month"] = df["dt"].dt.month
+gm = df[df["_month"].notna()].groupby(["_month","llm_stance"]).size().unstack(fill_value=0)
+for s in STANCES:
+    if s not in gm.columns: gm[s] = 0
+gm["Other"] = gm.drop(columns=[c for c in STANCES if c in gm.columns]).sum(axis=1)
+sbm = [{"month":int(mo), **{s:int(row[s]) for s in STANCES}, "Other":int(row["Other"]),
+        "total":int(row[STANCES+["Other"]].sum())} for mo,row in gm.iterrows()]
+dump("stance_by_month.json", sbm)
+
 # ---------- 3. stance by audience (+ Russia pre/post 2022) ----------
 AUD_ORDER = ["Global South minilaterals","UN / multilateral system","Russia","Other bilateral",
              "Domestic (Party/governance)","Western allies","Great-power theory","Taiwan / sovereignty",
@@ -101,13 +111,31 @@ dump("revisionism.json", {"by_era":rev_era, "pre2013_geography":rev_geo, "n_pre2
 
 # ---------- 6. word vs deed (descriptive: parallel-building deeds vs revisionist words) ----------
 order = pd.read_csv(EXT/"behavioural_indicators_order.csv").set_index("year")
-def mm(s): s=s.astype(float); return (s-s.min())/(s.max()-s.min())*100
-par = mm(order[["cips_participants","rmb_swift_share_pct","ndb_lending_cum_bn","brics_members"]].apply(
-        lambda c:(c-c.min())/(c.max()-c.min())).mean(axis=1))
+# Individual behaviour components that make up the aggregate parallel-building index.
+COMPONENTS = {
+  "cips_participants":   "CIPS payment participants",
+  "rmb_swift_share_pct": "RMB share of SWIFT payments (%)",
+  "ndb_lending_cum_bn":  "NDB cumulative lending ($bn)",
+  "brics_members":       "BRICS member states",
+}
+def norm01(c): c=c.astype(float); return (c-c.min())/(c.max()-c.min())
+comp_norm = {k: norm01(order[k]) for k in COMPONENTS}                 # each 0–1
+par = pd.concat(comp_norm, axis=1).mean(axis=1) * 100                 # aggregate 0–100
 revshare = sig.groupby("year").apply(lambda d:(d["llm_stance"]=="Revisionist").mean()*100)
-wd = [{"year":int(y), "parallel_build": (round(float(par.get(y)),1) if y in par.index else None),
-       "revisionist_pct": (round(float(revshare.get(y)),1) if y in revshare.index else None)}
-      for y in range(2000,2026)]
+def at(s, y, nd=1):
+    return round(float(s.get(y)), nd) if y in s.index else None
+wd = {
+  "components": [{"key":k, "label":v} for k,v in COMPONENTS.items()],
+  "series": [{
+     "year": int(y),
+     "parallel_build":  at(par, y),
+     "revisionist_pct": at(revshare, y),
+     # normalised 0–100 (so every component shares one left axis)
+     **{k: (round(float(comp_norm[k].get(y))*100,1) if y in order.index else None) for k in COMPONENTS},
+     # raw values for the tooltip
+     **{k+"_raw": at(order[k], y, 2) for k in COMPONENTS},
+  } for y in range(2000,2026)]
+}
 dump("word_deed.json", wd)
 
 # ---------- 7. UNGA (international audience) — analyst-coded summary, descriptive ----------
@@ -124,6 +152,10 @@ unga = {
 dump("unga.json", unga)
 
 # ---------- 8. site stats (data-driven hero + about) ----------
+# most common (modal) stance among signalled articles since 2013
+_modal2013 = sig[sig.year>=2013]["llm_stance"].value_counts()
+# combined Accusatory share toward the West (US + Western allies)
+_west = [r for r in arows if r["audience"] in ("United States","Western allies")]
 stats = {
   "n_articles": int(len(df)),
   "year_min": int(df.year.min()), "year_max": int(df.year.max()),
@@ -133,6 +165,9 @@ stats = {
   "gs_accusatory_pct": next((round(r["Accusatory"]/r["n"]*100) for r in arows if r["audience"]=="Global South minilaterals"), None),
   "gs_reform_pct": next((round((r["Reform"]+r["Defend-and-Reform"])/r["n"]*100) for r in arows if r["audience"]=="Global South minilaterals"), None),
   "rev_pre2005": rev_era[0]["rev_pct"], "rev_2018plus": rev_era[3]["rev_pct"],
+  "modal_stance_since2013": (_modal2013.index[0] if len(_modal2013) else None),
+  "modal_stance_since2013_pct": (round(_modal2013.iloc[0]/_modal2013.sum()*100) if len(_modal2013) else None),
+  "west_accusatory_pct": (round(sum(r["Accusatory"] for r in _west)/sum(r["n"] for r in _west)*100) if _west else None),
 }
 dump("stats.json", stats)
 print("\nDONE — site data written to", OUT)

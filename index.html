@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=20260609">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
     <div class="stat"><div class="num" id="s-articles">5,074</div><div class="lbl">articles coded for stance on the international order</div></div>
     <div class="stat"><div class="num" id="s-usgap">43% vs 2%</div><div class="lbl">Accusatory share of articles toward the US vs the Global South minilaterals</div></div>
     <div class="stat"><div class="num" id="s-rev">40% → 1%</div><div class="lbl">share of articles coded Revisionist (calling to replace the order): pre-2005 vs 2018+</div></div>
-    <div class="stat"><div class="num">defend</div><div class="lbl">the most common coded stance since 2013</div></div>
+    <div class="stat"><div class="num" id="s-modal">defend</div><div class="lbl" id="s-modal-lbl">the most common coded stance since 2013</div></div>
   </div>
   <p class="meta">Descriptive research preview · data updated <span id="s-updated">2026-06-06</span> · explore, don't take our word for it</p>
 </div></header>
@@ -51,16 +51,23 @@
   <div class="card chart-card" style="margin-top:1.1rem">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem">
       <div class="legend" id="arc-legend"></div>
-      <div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button></div>
+      <div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button><button data-mode="month">By month %</button></div>
     </div>
     <div class="chart-wrap"><canvas id="arc-chart"></canvas></div>
-    <p class="chart-note">People's Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.</p>
+    <p class="chart-note" id="arc-note">People's Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.</p>
   </div>
   <div class="phases">
     <div class="phase"><div class="pl" style="color:var(--reform)">Pre-2013</div><p>Reform and "new international order" language is most common in the coded articles; explicit calls to replace the order decline after the 1990s.</p></div>
     <div class="phase"><div class="pl" style="color:var(--defend)">2013–2022</div><p><b>Defend</b> is the most common coded stance, peaking around 2021.</p></div>
     <div class="phase"><div class="pl" style="color:var(--acc)">2023–</div><p>Reform recovers and <b>Accusatory</b> language rises, most often naming the United States; highest in 2025.</p></div>
   </div>
+</div></section>
+
+<!-- STANCE DEFINITIONS -->
+<section id="scheme"><div class="container">
+  <div class="kicker">How stances are coded · 编码方案</div>
+  <h2>What the five stances mean<span class="zh">五种立场的含义</span></h2>
+  <div class="exp" id="stance-defs"></div>
 </div></section>
 
 <!-- WHO IT ADDRESSES -->
@@ -74,7 +81,7 @@
     <p class="chart-note">People's Daily 国际秩序 articles with a classifiable stance, grouped by main foreign actor (audiences with n≥30). Shares of each stance. Descriptive — the actor and the stance are not independently assigned.</p>
   </div>
   <div class="callout" id="russia-callout">
-    <b>Russia.</b> Accusatory share of articles toward Russia is low and stays flat across the 2022 invasion of Ukraine (<span id="ru-pre">6%</span> before → <span id="ru-post">6%</span> after); Accusatory share toward the US and allies is ~42%. <a href="#explorer" onclick="setFilter({a:'Russia'})">See the Russia articles →</a>
+    <b>Russia.</b> Accusatory share of articles toward Russia is low and stays flat across the 2022 invasion of Ukraine (<span id="ru-pre">6%</span> before → <span id="ru-post">6%</span> after); Accusatory share toward the US and allies is ~<span id="ru-west">42%</span>. <a href="#explorer" onclick="setFilter({a:'Russia'})">See the Russia articles →</a>
   </div>
 </div></section>
 
@@ -93,29 +100,12 @@
 <section id="worddeed"><div class="container">
   <div class="kicker">Word vs deed · 言与行</div>
   <h2>Parallel-institution building and Revisionist language<span class="zh">另建机制的行为与"修正"话语</span></h2>
-  <p class="lead">An index of parallel-institution building (BRICS, the SCO, the CIPS payments network, renminbi reach) shown against the <span style="color:var(--rev)">share of articles coded Revisionist</span> (calling to replace the order). Read the two series and weigh what they show.</p>
+  <p class="lead">An index of parallel-institution building (BRICS, the SCO, the CIPS payments network, renminbi reach) shown against the <span style="color:var(--rev)">share of articles coded Revisionist</span> (calling to replace the order). Switch between the aggregate index and each individual behaviour, and weigh what the series show.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
+    <div class="toggle" id="wd-toggle" style="margin-bottom:.7rem;flex-wrap:wrap"></div>
     <div class="chart-wrap sm"><canvas id="wd-chart"></canvas></div>
     <p class="chart-note">Left axis: a normalised index of parallel-institution building (BRICS/SCO membership, CIPS participants, RMB payment share, NDB lending). Right axis: % of order-articles coded Revisionist (calling to replace the order). Behaviour indicators are hand-assembled from the public record; descriptive.</p>
   </div>
-</div></section>
-
-<!-- EXPLORER -->
-<section id="explorer"><div class="container explorer">
-  <div class="kicker">Explore the articles · 检索原文</div>
-  <h2>Read the corpus yourself<span class="zh">自行检索全部文章</span></h2>
-  <p class="lead">Every coded article. Filter by stance, audience, theme, and year, or search the headlines. Each card shows the driving sentence — the actual phrase about 国际秩序 — why the model coded it that way, a link to the People's Daily archive (may need a subscription), and an open-web search so you can find the piece either way.</p>
-  <div class="controls">
-    <select id="f-stance"><option value="">All stances</option></select>
-    <select id="f-aud"><option value="">All audiences</option></select>
-    <select id="f-dom"><option value="">All themes</option></select>
-    <select id="f-year"><option value="">All years</option></select>
-    <input class="search" id="f-q" type="search" placeholder="Search headlines & quotes (Chinese or pinyin)…">
-    <button class="reset" id="f-reset">Reset</button>
-    <span class="count" id="ex-count">—</span>
-  </div>
-  <div class="cards" id="ex-cards"></div>
-  <button class="loadmore" id="ex-more" style="display:none">Show more</button>
 </div></section>
 
 <!-- KEY TERMS -->
@@ -146,13 +136,6 @@
   <div class="row two" style="margin-top:1rem" id="unga-quotes"></div>
 </div></section>
 
-<!-- STANCE DEFINITIONS -->
-<section id="scheme"><div class="container">
-  <div class="kicker">How stances are coded · 编码方案</div>
-  <h2>What the five stances mean<span class="zh">五种立场的含义</span></h2>
-  <div class="exp" id="stance-defs"></div>
-</div></section>
-
 <!-- ABOUT -->
 <section id="about"><div class="container about">
   <div class="kicker">About &amp; methods · 数据与方法</div>
@@ -167,11 +150,29 @@
   </div>
 </div></section>
 
+<!-- EXPLORER -->
+<section id="explorer"><div class="container explorer">
+  <div class="kicker">Explore the articles · 检索原文</div>
+  <h2>Read the corpus yourself<span class="zh">自行检索全部文章</span></h2>
+  <p class="lead">Every coded article. Filter by stance, audience, theme, and year, or search the headlines. Each card shows the driving sentence — the actual phrase about 国际秩序 — an English translation, why the model coded it that way, a link to the People's Daily archive (may need a subscription), and an open-web search so you can find the piece either way.</p>
+  <div class="controls">
+    <select id="f-stance"><option value="">All stances</option></select>
+    <select id="f-aud"><option value="">All audiences</option></select>
+    <select id="f-dom"><option value="">All themes</option></select>
+    <select id="f-year"><option value="">All years</option></select>
+    <input class="search" id="f-q" type="search" placeholder="Search headlines & quotes (Chinese or pinyin)…">
+    <button class="reset" id="f-reset">Reset</button>
+    <span class="count" id="ex-count">—</span>
+  </div>
+  <div class="cards" id="ex-cards"></div>
+  <button class="loadmore" id="ex-more" style="display:none">Show more</button>
+</div></section>
+
 <footer><div class="container">
   <span>China &amp; the International Order · descriptive research preview · updated <span id="ft-updated">2026-06-06</span></span>
   <span><a href="https://jamiegjo.github.io/chinamfa/">MFA site</a> · Classifications subject to revision</span>
 </div></footer>
 
-<script src="js/app.js"></script>
+<script src="js/app.js?v=20260609"></script>
 </body>
 </html>
