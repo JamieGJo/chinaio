@@ -284,7 +284,7 @@ def by_year(d_, years):
         out.append({"year": int(y), "n": int(len(sub)),
                     **{st: (round((sub["llm_stance"]==st).mean()*100,1) if len(sub) else None) for st in STANCES}})
     return out
-YRS = list(range(2014, int(df.year.max())+1))   # window where all three overlap
+YRS = list(range(2001, int(df.year.max())+1))   # China Daily starts 2001; PD English (2014+) is null before then
 english_out = {
   "sources": [
     {"key":"pd_zh", "label":"People's Daily (Chinese)", "n": int(len(pd_sig))},

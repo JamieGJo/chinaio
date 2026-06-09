@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609g';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609h';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
@@ -374,13 +374,16 @@ function englishSection(en){
 function buildEnTime(){
   const en=enData, srcs=EN_SRCS.filter(([k])=>enVis[k]);
   const labels = en.by_year.pd_zh.map(d=>d.year);
-  const ds = srcs.map(([k,lbl])=>({ label:lbl, data:en.by_year[k].map(d=>d[enStance]),
-    borderColor:EN_SRC_COLORS[k], backgroundColor:EN_SRC_COLORS[k], borderWidth:2.4, tension:.25, pointRadius:0, spanGaps:true }));
+  const ds = srcs.map(([k,lbl])=>({ label:lbl, _k:k, data:en.by_year[k].map(d=>d[enStance]),
+    borderColor:EN_SRC_COLORS[k], backgroundColor:EN_SRC_COLORS[k], borderWidth:2.4, tension:.25,
+    pointRadius:0, spanGaps:true, borderDash: k==='pd_en'?[5,3]:undefined }));
   if(enTimeChart) enTimeChart.destroy();
   enTimeChart = new Chart($('#english-time-chart').getContext('2d'),{ type:'line', data:{labels, datasets:ds},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{position:'top', labels:{boxWidth:12, font:{size:10}, padding:8}},
-        tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw==null?'—':c.raw+'%'}` } } },
+        tooltip:{ callbacks:{ label:c=>{ if(c.raw==null) return null;
+          const n = en.by_year[c.dataset._k]?.[c.dataIndex]?.n;
+          return `${c.dataset.label}: ${c.raw}%${n?` (n=${n})`:''}`; } } } },
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
         y:{beginAtZero:true, title:{display:true, text:enStance+' share (%)'}} } } });
 }
