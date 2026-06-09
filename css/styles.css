@@ -112,6 +112,10 @@ section:last-of-type{border-bottom:none}
 .acard .tags b{color:#475569;font-weight:600}
 .acard .why{font-family:'Inter',sans-serif;font-size:.78rem;color:#52606e;line-height:1.5;border-top:1px solid var(--line);padding-top:.5rem;display:none}
 .acard .why.open{display:block}
+.acard .en{display:none;font-family:'Inter',sans-serif;background:#f4f7fb;border-left:3px solid var(--defend);border-radius:4px;padding:.5rem .65rem;margin:.1rem 0}
+.acard .en.open{display:block}
+.acard .en .en-h{font-size:.92rem;font-weight:600;color:#1a2336;line-height:1.4}
+.acard .en .en-q{font-size:.84rem;color:#52606e;font-style:italic;margin-top:.25rem;line-height:1.45}
 .acard .actions{display:flex;gap:.9rem;font-family:'Inter',sans-serif;font-size:.76rem;margin-top:.1rem}
 .acard .actions a,.acard .actions button{color:var(--defend);background:none;border:none;cursor:pointer;font-size:.76rem;font-family:'Inter',sans-serif;padding:0}
 .acard .actions button:hover{text-decoration:underline}

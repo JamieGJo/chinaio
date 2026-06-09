@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609c';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609d';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
@@ -203,20 +203,23 @@ function render(reset){
   $('#ex-count').textContent = `${fmt(res.length)} article${res.length===1?'':'s'}`;
   $('#ex-more').style.display = shown < res.length ? 'block' : 'none';
   $('#ex-cards').querySelectorAll('.why-btn').forEach(b=> b.onclick=()=>{ const w=b.closest('.acard').querySelector('.why'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide reasoning':'Why this code?'; });
+  $('#ex-cards').querySelectorAll('.en-btn').forEach(b=> b.onclick=()=>{ const w=b.closest('.acard').querySelector('.en'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide English':'English'; });
 }
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function card(a){
   const sc = a.s.replace(/ /g,'');
   const val = (a.v===null||a.v===undefined)?'':` · valence ${a.v>0?'+':''}${a.v}`;
+  const hasEn = a.he || a.qe;
   return `<div class="acard">
     <div class="top"><span class="chip c-${sc}">${a.s}</span>
       ${a.a&&a.a!=='—'?`<span class="tags"><b>${a.a}</b></span>`:''}
       <span class="date">${a.d}</span></div>
     <h4>${esc(a.h)||'<span style=color:#aaa>(no headline)</span>'}</h4>
     ${a.q?`<div class="quote zh">${esc(a.q)}</div>`:''}
+    ${hasEn?`<div class="en">${a.he?`<div class="en-h">${esc(a.he)}</div>`:''}${a.qe?`<div class="en-q">"${esc(a.qe)}"</div>`:''}</div>`:''}
     <div class="tags">${a.dm&&a.dm!=='—'?`theme: <b>${a.dm}</b>`:''}${a.t?` · ${a.t}${val}`:''}${a.sec?` · ${a.sec}`:''}</div>
     ${a.r?`<div class="why">${esc(a.r)}</div>`:''}
-    <div class="actions">${a.r?'<button class="why-btn">Why this code?</button>':''}${a.u?`<a href="${a.u}" target="_blank" rel="noopener" title="People's Daily archive (may need a subscription)">Source ↗</a>`:''}${a.h?`<a href="https://www.google.com/search?q=${encodeURIComponent('"'+a.h+'" 人民日报')}" target="_blank" rel="noopener" title="Find on the open web">Search web ↗</a>`:''}</div>
+    <div class="actions">${hasEn?'<button class="en-btn">English</button>':''}${a.r?'<button class="why-btn">Why this code?</button>':''}${a.u?`<a href="${a.u}" target="_blank" rel="noopener" title="People's Daily archive (may need a subscription)">Source ↗</a>`:''}${a.h?`<a href="https://www.google.com/search?q=${encodeURIComponent('"'+a.h+'" 人民日报')}" target="_blank" rel="noopener" title="Find on the open web">Search web ↗</a>`:''}</div>
   </div>`;
 }
 window.setFilter = function(obj){

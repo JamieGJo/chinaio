@@ -33,9 +33,17 @@ def clip(s, n):
     return s if len(s) <= n else s[:n].rstrip()+"…"
 
 # ---------- 1. article explorer corpus ----------
+# optional English translations (from the Haiku batch; merged when present)
+TRANSL = CLS/"2026-06-09_guojizhixu_translations.csv"
+tr = {}
+if TRANSL.exists():
+    _td = pd.read_csv(TRANSL, dtype=str).fillna("")
+    tr = {row["id"]: (row.get("h_en",""), row.get("q_en","")) for _,row in _td.iterrows()}
+    print(f"  merged {sum(1 for v in tr.values() if v[0] or v[1])} English translations")
+
 recs = []
 for _, r in df.iterrows():
-    recs.append({
+    rec = {
         "id": r["id"],
         "y": int(r["year"]),
         "d": (r["dt"].strftime("%Y-%m-%d") if pd.notna(r["dt"]) else ""),
@@ -49,7 +57,11 @@ for _, r in df.iterrows():
         "q": clip(r.get("llm_quote"), 130),       # the driving 国际秩序 sentence
         "r": clip(r.get("llm_rationale"), 200),    # LLM's English reasoning
         "u": r.get("url") if pd.notna(r.get("url")) else "",
-    })
+    }
+    he, qe = tr.get(r["id"], ("", ""))
+    if he: rec["he"] = clip(he, 160)   # English headline
+    if qe: rec["qe"] = clip(qe, 320)   # English quote
+    recs.append(rec)
 recs.sort(key=lambda x: x["d"], reverse=True)
 dump("articles.json", recs)
 
