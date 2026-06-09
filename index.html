@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/styles.css?v=20260609k">
+<link rel="stylesheet" href="css/styles.css?v=20260609l">
 </head>
 <body>
 
@@ -76,11 +76,12 @@
 <!-- OVER TIME / CONTEXT -->
 <section id="context"><div class="container">
   <div class="kicker">Over time · 随时间变化</div>
-  <h2>Order-talk volume and US isolation at the UN<span class="zh">国际秩序话语数量与美国在联合国的孤立</span></h2>
-  <p class="lead">Two series shown together: the number of People's Daily 国际秩序 articles per year, and US isolation at the UN (the average distance of UN members from the US in roll-call votes). Association only.</p>
+  <h2>Order-talk volume and US confrontation<span class="zh">国际秩序话语数量与中美对抗</span></h2>
+  <p class="lead">The bars show People's Daily 国际秩序 articles per year. The line overlays a continuous measure of the US–China relationship — switch tabs between US isolation at the UN, China–US confrontation (GDELT), China's relative power, and US tariffs. Each tab reports the association (Pearson r) over the overlapping years. Association only, not a claim of cause.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
+    <div class="ctx-tabs" id="context-tabs"></div>
     <div class="chart-wrap"><canvas id="context-chart"></canvas></div>
-    <p class="chart-note">Left axis: US isolation at the UN (world-mean ideal-point distance from the US; Voeten roll-call data). Right axis: number of People's Daily 国际秩序 articles per year. Hollow points = thin vote-years (e.g. 2024, 8 US votes) shown but unreliable. Association, not a claim of cause.</p>
+    <p class="chart-note" id="context-note"></p>
   </div>
 </div></section>
 
@@ -195,6 +196,6 @@
   <span><a href="https://jamiegjo.github.io/chinamfa/">MFA site</a> · Classifications subject to revision</span>
 </div></footer>
 
-<script src="js/app.js?v=20260609k"></script>
+<script src="js/app.js?v=20260609l"></script>
 </body>
 </html>

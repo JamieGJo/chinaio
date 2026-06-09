@@ -142,6 +142,58 @@ us = [{"year":int(r["year"]), "alienation":round(float(r["world_mean_dist_from_u
       for _,r in ua.iterrows() if r["year"]>=1990]
 dump("us_alienation.json", us)
 
+# ---------- 4b. context covariates (tabbed: order-talk volume vs continuous series) ----------
+CYRS = list(range(1990, int(df.year.max())+1))
+volume = [int(vol.get(y,0)) for y in CYRS]
+def pearson(xs, ys):
+    pairs = [(x,y) for x,y in zip(xs,ys) if x is not None and y is not None]
+    if len(pairs) < 4: return None, len(pairs)
+    a = np.array([p[0] for p in pairs], float); b = np.array([p[1] for p in pairs], float)
+    if a.std()==0 or b.std()==0: return None, len(pairs)
+    return round(float(np.corrcoef(a,b)[0,1]),2), len(pairs)
+
+# UN isolation (reliable-year correlation only)
+ua_m = {int(r["year"]): (round(float(r["world_mean_dist_from_us"]),3), bool(r["reliable"])) for _,r in ua.iterrows()}
+un_series   = [ua_m[y][0] if y in ua_m else None for y in CYRS]
+un_reliable = [ua_m[y][1] if y in ua_m else False for y in CYRS]
+un_r, un_n  = pearson([volume[i] if un_reliable[i] else None for i in range(len(CYRS))], un_series)
+
+# GDELT US–China conflict share (annual, event-weighted)
+gd = pd.read_csv(EXT/"gdelt_uschina_monthly.csv"); gd["y"] = pd.to_datetime(gd["month"], errors="coerce").dt.year
+gann = gd.groupby("y").apply(lambda d:(d["pct_conflict"]*d["n_events"]).sum()/d["n_events"].sum())
+gd_series = [round(float(gann.get(y))*100,1) if y in gann.index else None for y in CYRS]
+gd_r, gd_n = pearson(volume, gd_series)
+
+# Relative power: China GDP ÷ US GDP (%)
+pw = pd.read_csv(EXT/"2026-06-04_power_covariates.csv").set_index("year")
+gdp_series = [round(float(pw["gdp_ratio_pct"].get(y)),1) if y in pw.index else None for y in CYRS]
+gdp_r, gdp_n = pearson(volume, gdp_series)
+
+# US tariffs on Chinese goods (annual mean)
+tt = pd.read_csv(EXT/"piie_tariffs_monthly.csv"); tt["y"] = pd.to_datetime(tt["ym"], errors="coerce").dt.year
+tann = tt.groupby("y")["us_on_china"].mean()
+tar_series = [round(float(tann.get(y)),1) if y in tann.index else None for y in CYRS]
+tar_r, tar_n = pearson(volume, tar_series)
+
+context_out = {
+  "years": CYRS, "volume": volume,
+  "covariates": [
+    {"key":"un", "label":"US isolation at the UN", "short":"US isolation · UN",
+     "axis":"World distance from US (isolation)", "series":un_series, "reliable":un_reliable, "r":un_r, "n":un_n,
+     "note":"US isolation at the UN — the world-mean ideal-point distance of UN members from the US in roll-call votes (Voeten UN-voting data). Higher = the US more isolated. Hollow points mark thin vote-years (few US roll-calls) and are excluded from the correlation."},
+    {"key":"gdelt", "label":"China–US confrontation (GDELT)", "short":"Confrontation · GDELT",
+     "axis":"Conflict share of US–China events (%)", "series":gd_series, "r":gd_r, "n":gd_n,
+     "note":"Share of US–China interaction events coded conflictual in GDELT (the Global Database of Events, Language &amp; Tone), annual mean weighted by event volume. Higher = more confrontation. Machine-coded from world news; descriptive."},
+    {"key":"power", "label":"China's relative power (GDP)", "short":"Relative power · GDP",
+     "axis":"China GDP ÷ US GDP (%)", "series":gdp_series, "r":gdp_r, "n":gdp_n,
+     "note":"China's GDP as a percentage of US GDP (World Bank, current US$). A structural covariate — both this and order-talk volume rise over the period, so the correlation largely reflects a shared upward trend."},
+    {"key":"tariff", "label":"US tariffs on Chinese goods", "short":"US tariffs",
+     "axis":"Average US tariff on Chinese goods (%)", "series":tar_series, "r":tar_r, "n":tar_n,
+     "note":"Average US tariff rate on imports from China (PIIE / Chad Bown's US–China tariff tracker), annual mean. Steps up with the 2018– trade war and again sharply in 2025."},
+  ],
+}
+dump("context.json", context_out)
+
 # ---------- 5. revisionism over time (collapse + where it lived) ----------
 def era(y): return "pre-2005" if y<2005 else "2005–12" if y<2013 else "2013–17" if y<2018 else "2018+"
 sig2 = sig.copy(); sig2["era"] = sig2.year.map(era)

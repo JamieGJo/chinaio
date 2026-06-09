@@ -9,13 +9,13 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609k';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609l';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
-Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
+Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
   'word_deed.json','unga.json','terms.json','ungdc.json','english.json'].map(J))
-.then(([stats, sby, sbm, aud, usal, wd, unga, td, ungdc, en]) => {
-  hero(stats); arc(sby, sbm); audience(aud); context(usal); worddeed(wd);
+.then(([stats, sby, sbm, aud, ctx, wd, unga, td, ungdc, en]) => {
+  hero(stats); arc(sby, sbm); audience(aud); context(ctx); worddeed(wd);
   terms(td); stanceDefs(); ungaSection(unga, ungdc, stats); englishSection(en);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
@@ -118,21 +118,34 @@ function audience(aud){
           $('#ru-post').textContent = Math.round(ru['2022+'].Accusatory)+'%'; }
 }
 
-/* ---------- context chart (US isolation + IO volume) ---------- */
-function context(usal){
-  const ctx=$('#context-chart').getContext('2d');
-  const ptColor = usal.map(d=> d.reliable? '#B23A48':'#fff');
-  new Chart(ctx,{ data:{ labels:usal.map(d=>d.year), datasets:[
-    { type:'line', label:'US isolation at the UN', yAxisID:'y', data:usal.map(d=>d.alienation),
-      borderColor:'#B23A48', backgroundColor:'#B23A48', borderWidth:2.4, tension:.2,
-      pointBackgroundColor:ptColor, pointBorderColor:'#B23A48', pointRadius:3.5, pointHoverRadius:5, order:1 },
-    { type:'bar', label:'PD order-articles / yr', yAxisID:'y1', data:usal.map(d=>d.io_articles),
+/* ---------- context: order-talk volume vs continuous covariates (tabbed) ---------- */
+let ctxChart, ctxData, ctxIdx=0;
+function context(ctx){
+  ctxData = ctx;
+  $('#context-tabs').innerHTML = ctx.covariates.map((c,i)=>`<button data-i="${i}" class="${i===0?'on':''}">${c.short}</button>`).join('');
+  $('#context-tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); ctxIdx=+b.dataset.i; buildContext(); });
+  buildContext();
+}
+function buildContext(){
+  const ctx=ctxData, cov=ctx.covariates[ctxIdx];
+  const ptColor  = cov.reliable ? cov.reliable.map(r=> r?'#B23A48':'#fff') : '#B23A48';
+  const ptRadius = cov.reliable ? cov.reliable.map(r=> r?3.5:3) : 3;
+  if(ctxChart) ctxChart.destroy();
+  ctxChart = new Chart($('#context-chart').getContext('2d'),{ data:{ labels:ctx.years, datasets:[
+    { type:'line', label:cov.label, yAxisID:'y', data:cov.series, borderColor:'#B23A48', backgroundColor:'#B23A48',
+      borderWidth:2.4, tension:.2, spanGaps:true, pointBackgroundColor:ptColor, pointBorderColor:'#B23A48',
+      pointRadius:ptRadius, pointHoverRadius:5, order:1 },
+    { type:'bar', label:'PD order-articles / yr', yAxisID:'y1', data:ctx.volume,
       backgroundColor:'rgba(34,48,74,.16)', borderWidth:0, order:2 } ]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-      plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}} },
+      plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}},
+        tooltip:{ callbacks:{ label:c=> c.raw==null?null:`${c.dataset.label}: ${c.raw}` } } },
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
-        y:{position:'left', title:{display:true,text:'World distance from US (isolation)'}, grid:{color:'#eee'}},
+        y:{position:'left', title:{display:true,text:cov.axis}, grid:{color:'#eee'}},
         y1:{position:'right', title:{display:true,text:'PD articles / yr'}, grid:{display:false}, beginAtZero:true} } } });
+  const rtxt = (cov.r==null) ? 'too few overlapping years to correlate' : `r = ${cov.r} over ${cov.n} years`;
+  $('#context-note').innerHTML = `<b>Order-talk volume vs this series: ${rtxt}.</b> ${cov.note}`;
 }
 
 /* ---------- word vs deed (aggregate or any single behaviour vs revisionist words) ---------- */

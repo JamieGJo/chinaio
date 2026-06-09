@@ -60,6 +60,10 @@ section:last-of-type{border-bottom:none}
 .toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-family:'Inter',sans-serif;font-size:.8rem}
 .toggle button{padding:.32rem .8rem;background:#fff;border:none;cursor:pointer;color:var(--muted)}
 .toggle button.on{background:var(--navy);color:#fff}
+.ctx-tabs{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.7rem}
+.ctx-tabs button{font-family:'Inter',sans-serif;font-size:.78rem;padding:.35rem .75rem;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--muted);cursor:pointer}
+.ctx-tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ctx-tabs button:hover:not(.on){border-color:var(--navy);color:var(--ink)}
 
 /* ---- stance legend / chips ---- */
 .legend{display:flex;gap:1rem;flex-wrap:wrap;font-family:'Inter',sans-serif;font-size:.8rem;margin:.7rem 0}
