@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609m';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609n';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -271,10 +271,11 @@ window.setFilter = function(obj){
 
 /* ---------- combined term chart (selectable) ---------- */
 const TERM_COLORS = {io:'#22304a', csf:'#3F8F5B', ntr:'#2E5E8C', gc:'#6BA3B0', pwo:'#B23A48', isys:'#C8902A'};
-let termData, termChart, termVis;
+let termData, termChart, termVis, termView='annual', termFrom, termTo;
 function terms(td){
   termData = td;
   termVis = Object.fromEntries(td.terms.map(t=>[t.key, true]));
+  const yrs = td.years; termFrom = yrs[0]; termTo = yrs[yrs.length-1];
   $('#term-legend').innerHTML = td.terms.map(t=>
     `<div class="it term-it" data-k="${t.key}" style="cursor:pointer;user-select:none">
        <div class="dot" style="background:${TERM_COLORS[t.key]}"></div><span class="zh">${t.zh}</span>
@@ -284,22 +285,39 @@ function terms(td){
     el.style.opacity = termVis[el.dataset.k] ? '1' : '.38';
     buildTerms();
   }));
+  // view toggle (annual / rolling monthly)
+  $('#term-view').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); termView=b.dataset.v; buildTerms(); });
+  // year-range sliders (zoom the timeline)
+  const fromS=$('#term-from'), toS=$('#term-to'), fd=$('#term-from-d'), tdd=$('#term-to-d');
+  fromS.min=toS.min=yrs[0]; fromS.max=toS.max=yrs[yrs.length-1]; fromS.value=termFrom; toS.value=termTo;
+  function syncRange(){ let a=+fromS.value, b=+toS.value; if(a>b){[a,b]=[b,a];}
+    termFrom=a; termTo=b; fd.textContent=a; tdd.textContent=b; buildTerms(); }
+  fromS.addEventListener('input', ()=>{ if(+fromS.value>+toS.value) toS.value=fromS.value; syncRange(); });
+  toS.addEventListener('input',   ()=>{ if(+toS.value<+fromS.value) fromS.value=toS.value; syncRange(); });
   buildTerms();
   termDefs(td);
 }
 function buildTerms(){
-  const td=termData;
+  const td=termData, isMonthly=termView==='monthly';
+  const allLabels = isMonthly ? td.months : td.years;
+  const seriesMap = isMonthly ? td.monthly : td.series;
+  const idx = allLabels.map((_,i)=>i).filter(i=>{
+    const y = isMonthly ? +String(allLabels[i]).slice(0,4) : allLabels[i];
+    return y>=termFrom && y<=termTo;
+  });
+  const labels = idx.map(i=>allLabels[i]);
   const ds = td.terms.filter(t=>termVis[t.key]).map(t=>({
-    label:`${t.zh} ${t.en}`, data:td.series[t.key].map(d=>d.n),
+    label:`${t.zh} ${t.en}`, data: idx.map(i=>seriesMap[t.key][i]),
     borderColor:TERM_COLORS[t.key], backgroundColor:TERM_COLORS[t.key],
     borderWidth:2.2, tension:.25, pointRadius:0, spanGaps:true }));
   if(termChart) termChart.destroy();
   termChart = new Chart($('#term-chart').getContext('2d'), { type:'line',
-    data:{ labels:td.years, datasets:ds },
+    data:{ labels, datasets:ds },
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw}` } } },
-      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
-        y:{beginAtZero:true, title:{display:true, text:'Articles per year'}} } } });
+      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:isMonthly?12:20}},
+        y:{beginAtZero:true, title:{display:true, text:isMonthly?'Mentions, trailing 12 months':'Articles per year'}} } } });
 }
 
 /* ---------- term backgrounds (web-sourced, descriptive) ---------- */

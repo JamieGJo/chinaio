@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/styles.css?v=20260609m">
+<link rel="stylesheet" href="css/styles.css?v=20260609n">
 </head>
 <body>
 
@@ -110,8 +110,17 @@
   <p class="lead">Beyond 国际秩序 itself, a family of related terms rises and falls over time. Select terms in the legend to compare their annual frequency in People's Daily; click any term below for its background and dates.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="legend" id="term-legend"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:.45rem .9rem;align-items:center;margin:.2rem 0 .55rem">
+      <div class="toggle" id="term-view"><button data-v="annual" class="on">Annual</button><button data-v="monthly">Rolling monthly</button></div>
+      <span style="font-size:.72rem;color:#6B7280;font-family:Inter,sans-serif">Years</span>
+      <input type="range" id="term-from" min="1990" max="2026" value="1990" step="1" style="width:120px;accent-color:#22304a">
+      <span id="term-from-d" style="font-size:.78rem;font-weight:700;color:#22304a">1990</span>
+      <span style="color:#9aa3ad">–</span>
+      <input type="range" id="term-to" min="1990" max="2026" value="2026" step="1" style="width:120px;accent-color:#22304a">
+      <span id="term-to-d" style="font-size:.78rem;font-weight:700;color:#22304a">2026</span>
+    </div>
     <div class="chart-wrap"><canvas id="term-chart"></canvas></div>
-    <p class="chart-note">Annual count of People's Daily articles containing each term (1990–2026; all articles, not only those mentioning 国际秩序). 国际秩序 is the coded corpus; the others are archive frequency counts from the print/online editions. Click a term in the legend to toggle it on or off.</p>
+    <p class="chart-note">Annual = articles per calendar year. Rolling monthly = mentions in the trailing 12 months, plotted monthly. Drag the year handles to zoom the timeline. 国际秩序 is the coded corpus; the other terms are archive frequency counts. Click a term in the legend to toggle it.</p>
   </div>
   <div class="exp" id="term-defs"></div>
 </div></section>
@@ -202,6 +211,6 @@
   <span><a href="https://jamiegjo.github.io/chinamfa/">MFA site</a> · Classifications subject to revision</span>
 </div></footer>
 
-<script src="js/app.js?v=20260609m"></script>
+<script src="js/app.js?v=20260609n"></script>
 </body>
 </html>

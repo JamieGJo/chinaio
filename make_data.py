@@ -291,19 +291,37 @@ TERM_DEFS = [
   ("isys", "国际体系",        "International system"),
 ]
 xt = pd.ExcelFile(TERMS_XLSX)
-counts = {
-  "io":   df.groupby("year").size(),                              # the coded corpus = 国际秩序 freq
-  "csf":  yc(pd.read_excel(CSF_XLSX)["date"]),
-  "ntr":  yc(xt.parse("新型国际关系")["date"]),
-  "gc":   yc(xt.parse("百年未有之大变局")["date"]),
-  "pwo":  yc(xt.parse("战后国际秩序")["date"]),
-  "isys": yc(xt.parse("国际体系")["date"]),
+# read each term's dates once → use for both annual counts and monthly rolling
+dates_src = {
+  "io":   df["dt"],
+  "csf":  pd.read_excel(CSF_XLSX)["date"],
+  "ntr":  xt.parse("新型国际关系")["date"],
+  "gc":   xt.parse("百年未有之大变局")["date"],
+  "pwo":  xt.parse("战后国际秩序")["date"],
+  "isys": xt.parse("国际体系")["date"],
 }
+counts = {k: yc(v) for k,v in dates_src.items()}
 YMIN, YMAX = 1990, int(df.year.max())
+YRS_T = list(range(YMIN, YMAX+1))
+
+# monthly: trailing 12-month rolling sum (computed over full history, displayed 1990+)
+MMAX = pd.Period(pd.to_datetime(df["dt"]).max(), "M")
+allmonths = pd.period_range("1949-01", str(MMAX), freq="M")
+def roll12(dseries):
+    d = pd.to_datetime(dseries, errors="coerce").dropna()
+    mc = d.dt.to_period("M").value_counts()
+    raw = pd.Series([int(mc.get(m,0)) for m in allmonths])
+    return raw.rolling(12, min_periods=1).sum().astype(int).tolist()
+roll = {k: roll12(v) for k,v in dates_src.items()}
+disp = [i for i,m in enumerate(allmonths) if m.year >= YMIN]
+month_labels = [str(allmonths[i]) for i in disp]
+
 terms_out = {
   "terms": [{"key":k, "zh":zh, "en":en, "total": int(counts[k].sum())} for k,zh,en in TERM_DEFS],
-  "years": list(range(YMIN, YMAX+1)),
-  "series": {k: [{"year":y, "n":int(counts[k].get(y,0))} for y in range(YMIN,YMAX+1)] for k,_,_ in TERM_DEFS},
+  "years": YRS_T,
+  "series":  {k: [int(counts[k].get(y,0)) for y in YRS_T] for k,_,_ in TERM_DEFS},   # flat, aligned to years
+  "months":  month_labels,
+  "monthly": {k: [roll[k][i] for i in disp] for k,_,_ in TERM_DEFS},                 # rolling 12-mo, aligned to months
 }
 dump("terms.json", terms_out)
 
