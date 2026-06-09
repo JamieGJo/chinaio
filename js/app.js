@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609j';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609k';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
@@ -299,16 +299,12 @@ function stanceDefs(){
 
 /* ---------- UNGA (cross-national + domestic comparison) ---------- */
 function ungaSection(unga, ungdc, stats){
-  if(unga.summary) $('#unga-lead').innerHTML = unga.summary +
-    ` Across People's Daily 2010–2025, the Revisionist share averages <b>${unga.pd_revisionist_mean}%</b>; in these UN speeches it is zero.`;
-
   // Analysis intro (data-driven)
   const revYrs = (ungdc.china_rev_years||[]).join(', ');
   $('#unga-intro').innerHTML =
     `Reading every state's UN General Assembly general-debate speech with the same five-stance scheme places China in cross-national context. China has spoken in ${ungdc.n_china} of those debates between ${ungdc.year_min} and ${ungdc.year_max}. ` +
     `The podium as a whole is overwhelmingly <b>reformist</b> (Reform ${ungdc.world_dist.Reform}%, genuine Revisionist just ${ungdc.world_dist.Revisionist}% across ${fmt(ungdc.n_world)} speeches by ${ungdc.n_world_countries} states), and China sits in that mainstream (Reform ${ungdc.china_dist.Reform}%). ` +
-    `China's only order-replacement speeches fall in the NIEO era (${revYrs}); since then its UN language has been Defend-and-Reform. ` +
-    `At home in People's Daily the mix is different — more Defend (${ungdc.pd_dist.Defend}%) and Accusatory (${ungdc.pd_dist.Accusatory}%), less Reform (${ungdc.pd_dist.Reform}%).`;
+    `China's only order-replacement speeches fall in the NIEO era (${revYrs}); since then its UN language has been Defend-and-Reform.`;
 
   // Chart 1 — China at the UN, by decade (stacked %)
   legend($('#ungaDec-legend'), STANCES);
@@ -331,11 +327,6 @@ function ungaSection(unga, ungdc, stats){
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
       scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
         y:{stacked:true, grid:{display:false}} } } });
-
-  $('#unga-quotes').innerHTML = (unga.years||[]).map(q=>
-    `<div class="card" style="padding:1rem 1.2rem">
-      <div class="tags" style="font-family:Inter,sans-serif;font-size:.78rem;color:#6B7280">${q.y} · ${q.speaker}</div>
-      <p style="font-size:.98rem;margin:.4rem 0 0;color:#33414f">"${q.quote}"</p></div>`).join('');
 }
 
 /* ---------- In English (China Daily + PD English vs Chinese) ---------- */
