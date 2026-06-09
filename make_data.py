@@ -145,50 +145,54 @@ dump("us_alienation.json", us)
 # ---------- 4b. context covariates (tabbed: order-talk volume vs continuous series) ----------
 CYRS = list(range(1990, int(df.year.max())+1))
 volume = [int(vol.get(y,0)) for y in CYRS]
-def pearson(xs, ys):
-    pairs = [(x,y) for x,y in zip(xs,ys) if x is not None and y is not None]
-    if len(pairs) < 4: return None, len(pairs)
-    a = np.array([p[0] for p in pairs], float); b = np.array([p[1] for p in pairs], float)
-    if a.std()==0 or b.std()==0: return None, len(pairs)
-    return round(float(np.corrcoef(a,b)[0,1]),2), len(pairs)
 
-# UN isolation (reliable-year correlation only)
+# order-talk metrics: volume + per-stance share of signalled (gated at n>=5)
+syn = sig.groupby("year").size()
+def cshare_series(st):
+    g = sig.groupby("year").apply(lambda d, s=st:(d["llm_stance"]==s).mean()*100)
+    return [round(float(g.get(y)),1) if (y in g.index and int(syn.get(y,0))>=5) else None for y in CYRS]
+metrics = {
+  "volume":     {"label":"PD order-articles / yr", "data":volume},
+  "Defend":     {"label":"Defend share (%)",      "data":cshare_series("Defend")},
+  "Reform":     {"label":"Reform share (%)",      "data":cshare_series("Reform")},
+  "Accusatory": {"label":"Accusatory share (%)",  "data":cshare_series("Accusatory")},
+}
+
+# UN isolation
 ua_m = {int(r["year"]): (round(float(r["world_mean_dist_from_us"]),3), bool(r["reliable"])) for _,r in ua.iterrows()}
 un_series   = [ua_m[y][0] if y in ua_m else None for y in CYRS]
 un_reliable = [ua_m[y][1] if y in ua_m else False for y in CYRS]
-un_r, un_n  = pearson([volume[i] if un_reliable[i] else None for i in range(len(CYRS))], un_series)
 
 # GDELT US–China conflict share (annual, event-weighted)
 gd = pd.read_csv(EXT/"gdelt_uschina_monthly.csv"); gd["y"] = pd.to_datetime(gd["month"], errors="coerce").dt.year
 gann = gd.groupby("y").apply(lambda d:(d["pct_conflict"]*d["n_events"]).sum()/d["n_events"].sum())
 gd_series = [round(float(gann.get(y))*100,1) if y in gann.index else None for y in CYRS]
-gd_r, gd_n = pearson(volume, gd_series)
 
 # Relative power: China GDP ÷ US GDP (%)
 pw = pd.read_csv(EXT/"2026-06-04_power_covariates.csv").set_index("year")
 gdp_series = [round(float(pw["gdp_ratio_pct"].get(y)),1) if y in pw.index else None for y in CYRS]
-gdp_r, gdp_n = pearson(volume, gdp_series)
 
 # US tariffs on Chinese goods (annual mean)
 tt = pd.read_csv(EXT/"piie_tariffs_monthly.csv"); tt["y"] = pd.to_datetime(tt["ym"], errors="coerce").dt.year
 tann = tt.groupby("y")["us_on_china"].mean()
 tar_series = [round(float(tann.get(y)),1) if y in tann.index else None for y in CYRS]
-tar_r, tar_n = pearson(volume, tar_series)
 
 context_out = {
-  "years": CYRS, "volume": volume,
+  "years": CYRS,
+  "metric_order": ["volume","Defend","Reform","Accusatory"],
+  "metrics": metrics,
   "covariates": [
     {"key":"un", "label":"US isolation at the UN", "short":"US isolation · UN",
-     "axis":"World distance from US (isolation)", "series":un_series, "reliable":un_reliable, "r":un_r, "n":un_n,
+     "axis":"World distance from US (isolation)", "series":un_series, "reliable":un_reliable,
      "note":"US isolation at the UN — the world-mean ideal-point distance of UN members from the US in roll-call votes (Voeten UN-voting data). Higher = the US more isolated. Hollow points mark thin vote-years (few US roll-calls) and are excluded from the correlation."},
     {"key":"gdelt", "label":"China–US confrontation (GDELT)", "short":"Confrontation · GDELT",
-     "axis":"Conflict share of US–China events (%)", "series":gd_series, "r":gd_r, "n":gd_n,
+     "axis":"Conflict share of US–China events (%)", "series":gd_series,
      "note":"Share of US–China interaction events coded conflictual in GDELT (the Global Database of Events, Language &amp; Tone), annual mean weighted by event volume. Higher = more confrontation. Machine-coded from world news; descriptive."},
     {"key":"power", "label":"China's relative power (GDP)", "short":"Relative power · GDP",
-     "axis":"China GDP ÷ US GDP (%)", "series":gdp_series, "r":gdp_r, "n":gdp_n,
-     "note":"China's GDP as a percentage of US GDP (World Bank, current US$). A structural covariate — both this and order-talk volume rise over the period, so the correlation largely reflects a shared upward trend."},
+     "axis":"China GDP ÷ US GDP (%)", "series":gdp_series,
+     "note":"China's GDP as a percentage of US GDP (World Bank, current US$). A structural covariate that rises monotonically — a correlation with order-talk volume largely reflects a shared upward trend."},
     {"key":"tariff", "label":"US tariffs on Chinese goods", "short":"US tariffs",
-     "axis":"Average US tariff on Chinese goods (%)", "series":tar_series, "r":tar_r, "n":tar_n,
+     "axis":"Average US tariff on Chinese goods (%)", "series":tar_series,
      "note":"Average US tariff rate on imports from China (PIIE / Chad Bown's US–China tariff tracker), annual mean. Steps up with the 2018– trade war and again sharply in 2025."},
   ],
 }
@@ -216,15 +220,21 @@ COMPONENTS = {
 def norm01(c): c=c.astype(float); return (c-c.min())/(c.max()-c.min())
 comp_norm = {k: norm01(order[k]) for k in COMPONENTS}                 # each 0–1
 par = pd.concat(comp_norm, axis=1).mean(axis=1) * 100                 # aggregate 0–100
-revshare = sig.groupby("year").apply(lambda d:(d["llm_stance"]=="Revisionist").mean()*100)
 def at(s, y, nd=1):
     return round(float(s.get(y)), nd) if y in s.index else None
+# discourse: per-stance share of signalled articles, by year (selectable line)
+WD_STANCES = [("revisionist_pct","Revisionist"),("defend_pct","Defend"),
+              ("reform_pct","Reform"),("accusatory_pct","Accusatory")]
+wd_shares = {key: sig.groupby("year").apply(lambda d, st=st:(d["llm_stance"]==st).mean()*100)
+             for key,st in WD_STANCES}
 wd = {
   "components": [{"key":k, "label":v} for k,v in COMPONENTS.items()],
+  "stances": [{"key":key, "label":st} for key,st in WD_STANCES],
   "series": [{
      "year": int(y),
      "parallel_build":  at(par, y),
-     "revisionist_pct": at(revshare, y),
+     # discourse stance shares (%)
+     **{key: at(wd_shares[key], y) for key,_ in WD_STANCES},
      # normalised 0–100 (so every component shares one left axis)
      **{k: (round(float(comp_norm[k].get(y))*100,1) if y in order.index else None) for k in COMPONENTS},
      # raw values for the tooltip

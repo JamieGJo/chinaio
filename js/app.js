@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609l';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609m';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -118,17 +118,31 @@ function audience(aud){
           $('#ru-post').textContent = Math.round(ru['2022+'].Accusatory)+'%'; }
 }
 
-/* ---------- context: order-talk volume vs continuous covariates (tabbed) ---------- */
-let ctxChart, ctxData, ctxIdx=0;
+/* ---------- context: order-talk metric vs continuous covariate (both tabbed) ---------- */
+let ctxChart, ctxData, ctxIdx=0, ctxMetric='volume';
+function pearsonMasked(xs, ys, mask){
+  const X=[], Y=[];
+  for(let i=0;i<xs.length;i++){ if(mask && !mask[i]) continue; const a=xs[i], b=ys[i];
+    if(a==null||b==null) continue; X.push(+a); Y.push(+b); }
+  const n=X.length; if(n<4) return {r:null,n};
+  const mx=X.reduce((s,v)=>s+v,0)/n, my=Y.reduce((s,v)=>s+v,0)/n;
+  let sxy=0,sxx=0,syy=0;
+  for(let i=0;i<n;i++){ const dx=X[i]-mx, dy=Y[i]-my; sxy+=dx*dy; sxx+=dx*dx; syy+=dy*dy; }
+  if(sxx===0||syy===0) return {r:null,n};
+  return {r: Math.round(sxy/Math.sqrt(sxx*syy)*100)/100, n};
+}
 function context(ctx){
   ctxData = ctx;
+  $('#context-metric-tabs').innerHTML = ctx.metric_order.map(m=>`<button data-m="${m}" class="${m===ctxMetric?'on':''}">${m==='volume'?'Volume':m}</button>`).join('');
+  $('#context-metric-tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); ctxMetric=b.dataset.m; buildContext(); });
   $('#context-tabs').innerHTML = ctx.covariates.map((c,i)=>`<button data-i="${i}" class="${i===0?'on':''}">${c.short}</button>`).join('');
   $('#context-tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
     [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); ctxIdx=+b.dataset.i; buildContext(); });
   buildContext();
 }
 function buildContext(){
-  const ctx=ctxData, cov=ctx.covariates[ctxIdx];
+  const ctx=ctxData, cov=ctx.covariates[ctxIdx], metric=ctx.metrics[ctxMetric];
   const ptColor  = cov.reliable ? cov.reliable.map(r=> r?'#B23A48':'#fff') : '#B23A48';
   const ptRadius = cov.reliable ? cov.reliable.map(r=> r?3.5:3) : 3;
   if(ctxChart) ctxChart.destroy();
@@ -136,52 +150,57 @@ function buildContext(){
     { type:'line', label:cov.label, yAxisID:'y', data:cov.series, borderColor:'#B23A48', backgroundColor:'#B23A48',
       borderWidth:2.4, tension:.2, spanGaps:true, pointBackgroundColor:ptColor, pointBorderColor:'#B23A48',
       pointRadius:ptRadius, pointHoverRadius:5, order:1 },
-    { type:'bar', label:'PD order-articles / yr', yAxisID:'y1', data:ctx.volume,
+    { type:'bar', label:metric.label, yAxisID:'y1', data:metric.data,
       backgroundColor:'rgba(34,48,74,.16)', borderWidth:0, order:2 } ]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}},
         tooltip:{ callbacks:{ label:c=> c.raw==null?null:`${c.dataset.label}: ${c.raw}` } } },
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
         y:{position:'left', title:{display:true,text:cov.axis}, grid:{color:'#eee'}},
-        y1:{position:'right', title:{display:true,text:'PD articles / yr'}, grid:{display:false}, beginAtZero:true} } } });
-  const rtxt = (cov.r==null) ? 'too few overlapping years to correlate' : `r = ${cov.r} over ${cov.n} years`;
-  $('#context-note').innerHTML = `<b>Order-talk volume vs this series: ${rtxt}.</b> ${cov.note}`;
+        y1:{position:'right', title:{display:true,text:metric.label}, grid:{display:false}, beginAtZero:true} } } });
+  const {r,n} = pearsonMasked(metric.data, cov.series, cov.reliable||null);
+  const mName = ctxMetric==='volume' ? 'Order-talk volume' : `${ctxMetric} share`;
+  const rtxt = (r==null) ? 'too few overlapping years to correlate' : `r = ${r} over ${n} years`;
+  $('#context-note').innerHTML = `<b>${mName} vs this series: ${rtxt}.</b> ${cov.note}`;
 }
 
-/* ---------- word vs deed (aggregate or any single behaviour vs revisionist words) ---------- */
-let wdChart, wdSel='aggregate', wdData;
+/* ---------- word vs deed (any behaviour vs any stance share) ---------- */
+let wdChart, wdSel='aggregate', wdStance='revisionist_pct', wdData;
 function worddeed(wd){
   wdData = wd;
   const opts = [{key:'aggregate', label:'Aggregate index'}, ...wd.components];
   $('#wd-toggle').innerHTML = opts.map(o=>`<button data-k="${o.key}" class="${o.key==='aggregate'?'on':''}">${o.label}</button>`).join('');
   $('#wd-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
-    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
-    wdSel=b.dataset.k; buildWd(); });
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); wdSel=b.dataset.k; buildWd(); });
+  $('#wd-stance-toggle').innerHTML = wd.stances.map(s=>`<button data-k="${s.key}" class="${s.key===wdStance?'on':''}">${s.label}</button>`).join('');
+  $('#wd-stance-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); wdStance=b.dataset.k; buildWd(); });
   buildWd();
 }
 function buildWd(){
   const S=wdData.series, isAgg=wdSel==='aggregate';
   const comp = wdData.components.find(c=>c.key===wdSel);
-  const label = isAgg ? 'Parallel-building (aggregate, deeds)' : comp.label+' (deed)';
+  const behLabel = isAgg ? 'Parallel-building (aggregate, deeds)' : comp.label+' (deed)';
   const behData = S.map(d=> isAgg ? d.parallel_build : d[wdSel]);
   const rawData = S.map(d=> isAgg ? null : d[wdSel+'_raw']);
+  const stance = wdData.stances.find(s=>s.key===wdStance);
+  const stColor = C[stance.label] || '#B23A48';
   if(wdChart) wdChart.destroy();
   wdChart = new Chart($('#wd-chart').getContext('2d'),{ data:{ labels:S.map(d=>d.year), datasets:[
-    { type:'line', label, yAxisID:'y', data:behData,
+    { type:'line', label:behLabel, yAxisID:'y', data:behData,
       borderColor:'#C8902A', backgroundColor:'#C8902A', borderWidth:2.6, tension:.25, pointRadius:0, spanGaps:true },
-    { type:'line', label:'Calls to replace the order (words)', yAxisID:'y1', data:S.map(d=>d.revisionist_pct),
-      borderColor:'#B23A48', backgroundColor:'#B23A48', borderWidth:2.6, borderDash:[5,3], tension:.25, pointRadius:0, spanGaps:true } ]},
+    { type:'line', label:`${stance.label} share (words)`, yAxisID:'y1', data:S.map(d=>d[wdStance]),
+      borderColor:stColor, backgroundColor:stColor, borderWidth:2.6, borderDash:[5,3], tension:.25, pointRadius:0, spanGaps:true } ]},
     options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{ legend:{position:'top', labels:{boxWidth:14,padding:14}},
         tooltip:{ callbacks:{ label:c=>{
-          if(c.dataset.yAxisID==='y1') return `Revisionist share: ${c.raw}%`;
+          if(c.dataset.yAxisID==='y1') return `${stance.label} share: ${c.raw==null?'—':c.raw+'%'}`;
           const raw=rawData[c.dataIndex];
-          return raw!=null ? `${label}: ${raw} (index ${c.raw})` : `${label}: index ${c.raw}`;
+          return raw!=null ? `${behLabel}: ${raw} (index ${c.raw})` : `${behLabel}: index ${c.raw}`;
         }}}},
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
         y:{position:'left', min:0, max:100, title:{display:true,text: isAgg?'Parallel-build index (0–100)':'Normalised level (0–100)'}, grid:{color:'#eee'}},
-        y1:{position:'right', title:{display:true,text:'Revisionist share (%)'}, beginAtZero:true, grid:{display:false},
-            suggestedMax:15} } } });
+        y1:{position:'right', title:{display:true,text:`${stance.label} share (%)`}, beginAtZero:true, grid:{display:false}} } } });
 }
 
 /* ---------- explorer ---------- */
