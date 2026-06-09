@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/styles.css?v=20260609f">
+<link rel="stylesheet" href="css/styles.css?v=20260609g">
 </head>
 <body>
 
@@ -160,28 +160,17 @@
     </div>
     <div class="card chart-card">
       <h3 class="sans" style="font-size:1rem;margin:0 0 .2rem">One stance's share over time, by source</h3>
-      <div class="toggle" id="enStance-toggle" style="flex-wrap:wrap"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.35rem .8rem;align-items:center;margin:.3rem 0 .55rem">
+        <span style="font-size:.72rem;color:#6B7280;font-family:Inter,sans-serif">Stance</span>
+        <div class="toggle" id="enStance-toggle" style="flex-wrap:wrap"></div>
+        <span style="font-size:.72rem;color:#6B7280;font-family:Inter,sans-serif">Sources</span>
+        <div class="toggle" id="enSrc-toggle" style="flex-wrap:wrap"></div>
+      </div>
       <div class="chart-wrap sm"><canvas id="english-time-chart"></canvas></div>
-      <p class="chart-note">Share of each source's articles coded with the selected stance, per year (2014–2026, the window where all three overlap). Pick a stance above.</p>
+      <p class="chart-note">Share of each source's articles coded with the selected stance, per year (2014–2026, the window where all three overlap). Pick a stance, and toggle sources on or off to compare China Daily against the People's Daily editions.</p>
     </div>
   </div>
-  <h3 class="sans" style="font-size:1rem;margin:1.4rem 0 .2rem">Illustrative English passages</h3>
-  <div class="row two" style="margin-top:.4rem" id="english-quotes"></div>
   <p class="chart-note" style="margin-top:.7rem">English corpora: China Daily (n=2,654, 2001–2026) and People's Daily English (n=2,345, 2014–2026), found by the same order vocabulary and coded on the same five-stance scheme. They are also browsable in the explorer below via the <b>source</b> filter — and, being in English already, need no translation.</p>
-</div></section>
-
-<!-- ABOUT -->
-<section id="about"><div class="container about">
-  <div class="kicker">About &amp; methods · 数据与方法</div>
-  <h2>How this was built<span class="zh">关于本站</span></h2>
-  <div class="card" style="padding:1.3rem 1.5rem;margin-top:1rem">
-    <p>This site presents a <b>descriptive</b> content analysis of <em>People's Daily</em> (人民日报) coverage of the international order, 1950–2026. Articles were found by the exact phrase 国际秩序 (<em>guójì zhìxù</em>) and read by a large language model that assigned each a stance (Defend / Reform / Defend-and-Reform / Revisionist / Accusatory), a tone and valence, the audience it addresses, and an issue-theme. The coder was validated against a human-coded gold standard (Cohen's κ ≈ 0.68–0.79; a keyword baseline reaches only ≈0.30).</p>
-    <p>The patterns shown here also appear in four other sources — Xinhua wire copy, China's UN General Assembly speeches, Ministry of Foreign Affairs press briefings, and China's external behaviour — which is why we present them. But everything here is <b>association and description</b>, not causal claim. The point of the explorer is to let you check the coding and read the articles for yourself.</p>
-    <p style="margin-bottom:0"><b>Corpus:</b> <span id="ab-n">5,074</span> People's Daily articles · <b>Span:</b> 1950–2026 · <b>Source:</b> data.people.com.cn (subscription archive), paper.people.com.cn, people.com.cn.</p>
-    <div class="src">
-      <a href="https://jamiegjo.github.io/chinamfa/">MFA press-conference analysis →</a>
-    </div>
-  </div>
 </div></section>
 
 <!-- EXPLORER -->
@@ -203,11 +192,25 @@
   <button class="loadmore" id="ex-more" style="display:none">Show more</button>
 </div></section>
 
+<!-- ABOUT -->
+<section id="about"><div class="container about">
+  <div class="kicker">About &amp; methods · 数据与方法</div>
+  <h2>How this was built<span class="zh">关于本站</span></h2>
+  <div class="card" style="padding:1.3rem 1.5rem;margin-top:1rem">
+    <p>This site presents a <b>descriptive</b> content analysis of <em>People's Daily</em> (人民日报) coverage of the international order, 1950–2026. Articles were found by the exact phrase 国际秩序 (<em>guójì zhìxù</em>) and read by a large language model that assigned each a stance (Defend / Reform / Defend-and-Reform / Revisionist / Accusatory), a tone and valence, the audience it addresses, and an issue-theme. The coder was validated against a human-coded gold standard (Cohen's κ ≈ 0.68–0.79; a keyword baseline reaches only ≈0.30).</p>
+    <p>The patterns shown here also appear in four other sources — Xinhua wire copy, China's UN General Assembly speeches, Ministry of Foreign Affairs press briefings, and China's external behaviour — which is why we present them. But everything here is <b>association and description</b>, not causal claim. The point of the explorer is to let you check the coding and read the articles for yourself.</p>
+    <p style="margin-bottom:0"><b>Corpus:</b> <span id="ab-n">5,074</span> People's Daily articles · <b>Span:</b> 1950–2026 · <b>Source:</b> data.people.com.cn (subscription archive), paper.people.com.cn, people.com.cn.</p>
+    <div class="src">
+      <a href="https://jamiegjo.github.io/chinamfa/">MFA press-conference analysis →</a>
+    </div>
+  </div>
+</div></section>
+
 <footer><div class="container">
   <span>China &amp; the International Order · descriptive research preview · updated <span id="ft-updated">2026-06-06</span></span>
   <span><a href="https://jamiegjo.github.io/chinamfa/">MFA site</a> · Classifications subject to revision</span>
 </div></footer>
 
-<script src="js/app.js?v=20260609f"></script>
+<script src="js/app.js?v=20260609g"></script>
 </body>
 </html>

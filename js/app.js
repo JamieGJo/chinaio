@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609f';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609g';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
@@ -340,7 +340,8 @@ function ungaSection(unga, ungdc, stats){
 
 /* ---------- In English (China Daily + PD English vs Chinese) ---------- */
 const EN_SRC_COLORS = {pd_zh:'#22304a', pd_en:'#2E5E8C', cd:'#C8902A'};
-let enData, enTimeChart, enStance='Accusatory';
+const EN_SRCS = [['pd_zh',"People's Daily (Chinese)"],['pd_en',"People's Daily English"],['cd',"China Daily"]];
+let enData, enTimeChart, enStance='Accusatory', enVis={pd_zh:true, pd_en:true, cd:true};
 function englishSection(en){
   enData = en; const d = en.dist;
   $('#english-intro').innerHTML =
@@ -364,17 +365,14 @@ function englishSection(en){
   $('#enStance-toggle').innerHTML = STANCES.map(s=>`<button data-s="${s}" class="${s===enStance?'on':''}">${s}</button>`).join('');
   $('#enStance-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
     [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); enStance=b.dataset.s; buildEnTime(); });
+  // source toggle — lets readers build their own China Daily vs People's Daily comparison
+  $('#enSrc-toggle').innerHTML = EN_SRCS.map(([k,lbl])=>`<button data-k="${k}" class="${enVis[k]?'on':''}">${lbl}</button>`).join('');
+  $('#enSrc-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    enVis[b.dataset.k] = !enVis[b.dataset.k]; b.classList.toggle('on', enVis[b.dataset.k]); buildEnTime(); });
   buildEnTime();
-
-  // illustrative quotes
-  $('#english-quotes').innerHTML = (en.quotes||[]).map(q=>
-    `<div class="card" style="padding:1rem 1.2rem">
-      <div class="tags" style="font-family:Inter,sans-serif;font-size:.74rem;color:#6B7280"><span class="chip c-${q.stance.replace(/ /g,'')}">${q.stance}</span> · ${q.src} · ${q.y}</div>
-      <p style="font-size:.94rem;margin:.45rem 0 0;color:#33414f">"${esc(q.quote)}"</p>
-      <div class="tags" style="margin-top:.3rem;font-size:.72rem;color:#9aa3ad">${esc(q.title)}</div></div>`).join('');
 }
 function buildEnTime(){
-  const en=enData, srcs=[['pd_zh',"People's Daily (Chinese)"],['pd_en',"People's Daily English"],['cd',"China Daily"]];
+  const en=enData, srcs=EN_SRCS.filter(([k])=>enVis[k]);
   const labels = en.by_year.pd_zh.map(d=>d.year);
   const ds = srcs.map(([k,lbl])=>({ label:lbl, data:en.by_year[k].map(d=>d[enStance]),
     borderColor:EN_SRC_COLORS[k], backgroundColor:EN_SRC_COLORS[k], borderWidth:2.4, tension:.25, pointRadius:0, spanGaps:true }));
