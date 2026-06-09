@@ -9,14 +9,14 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609b';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609c';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
-  'word_deed.json','unga.json','terms.json'].map(J))
-.then(([stats, sby, sbm, aud, usal, wd, unga, td]) => {
+  'word_deed.json','unga.json','terms.json','ungdc.json'].map(J))
+.then(([stats, sby, sbm, aud, usal, wd, unga, td, ungdc]) => {
   hero(stats); arc(sby, sbm); audience(aud); context(usal); worddeed(wd);
-  terms(td); stanceDefs(); ungaSection(unga, stats);
+  terms(td); stanceDefs(); ungaSection(unga, ungdc, stats);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
 $('#ex-cards').innerHTML = '<p style="color:#9aa3ad;font-family:Inter,sans-serif">Loading the corpus…</p>';
@@ -289,10 +289,41 @@ function stanceDefs(){
     `<details><summary><span class="chip c-${en.replace(/ /g,'')}">${en}</span> <span style="color:${col}">${zh}</span></summary><div class="body">${body}</div></details>`).join('');
 }
 
-/* ---------- UNGA ---------- */
-function ungaSection(unga, stats){
+/* ---------- UNGA (cross-national + domestic comparison) ---------- */
+function ungaSection(unga, ungdc, stats){
   if(unga.summary) $('#unga-lead').innerHTML = unga.summary +
     ` Across People's Daily 2010–2025, the Revisionist share averages <b>${unga.pd_revisionist_mean}%</b>; in these UN speeches it is zero.`;
+
+  // Analysis intro (data-driven)
+  const revYrs = (ungdc.china_rev_years||[]).join(', ');
+  $('#unga-intro').innerHTML =
+    `Reading every state's UN General Assembly general-debate speech with the same five-stance scheme places China in cross-national context. China has spoken in ${ungdc.n_china} of those debates between ${ungdc.year_min} and ${ungdc.year_max}. ` +
+    `The podium as a whole is overwhelmingly <b>reformist</b> (Reform ${ungdc.world_dist.Reform}%, genuine Revisionist just ${ungdc.world_dist.Revisionist}% across ${fmt(ungdc.n_world)} speeches by ${ungdc.n_world_countries} states), and China sits in that mainstream (Reform ${ungdc.china_dist.Reform}%). ` +
+    `China's only order-replacement speeches fall in the NIEO era (${revYrs}); since then its UN language has been Defend-and-Reform. ` +
+    `At home in People's Daily the mix is different — more Defend (${ungdc.pd_dist.Defend}%) and Accusatory (${ungdc.pd_dist.Accusatory}%), less Reform (${ungdc.pd_dist.Reform}%).`;
+
+  // Chart 1 — China at the UN, by decade (stacked %)
+  legend($('#ungaDec-legend'), STANCES);
+  const dec = ungdc.china_decade;
+  new Chart($('#unga-decade-chart').getContext('2d'),{ type:'bar',
+    data:{ labels:dec.map(d=>`${d.decade} (n=${d.n})`), datasets: STANCES.map(s=>({
+      label:s, data:dec.map(d=>d[s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
+      scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:false, font:{size:9}}},
+        y:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Share of speeches (%)'}} } } });
+
+  // Chart 2 — China·UN vs World·UN vs China·home (stacked 100% composition)
+  legend($('#ungaCmp-legend'), STANCES);
+  const groups=[['China · UN', ungdc.china_dist],['All states · UN', ungdc.world_dist],['China · People\'s Daily (home)', ungdc.pd_dist]];
+  new Chart($('#unga-compare-chart').getContext('2d'),{ type:'bar',
+    data:{ labels:groups.map(g=>g[0]), datasets: STANCES.map(s=>({
+      label:s, data:groups.map(g=>g[1][s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
+      scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
+        y:{stacked:true, grid:{display:false}} } } });
+
   $('#unga-quotes').innerHTML = (unga.years||[]).map(q=>
     `<div class="card" style="padding:1rem 1.2rem">
       <div class="tags" style="font-family:Inter,sans-serif;font-size:.78rem;color:#6B7280">${q.y} · ${q.speaker}</div>

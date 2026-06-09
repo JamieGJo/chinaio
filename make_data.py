@@ -202,4 +202,27 @@ terms_out = {
 }
 dump("terms.json", terms_out)
 
+# ---------- 10. UNGA: China cross-national + domestic comparison ----------
+ung = pd.read_csv(CLS/"2026-06-06_ungdc_stance_llm.csv", dtype=str)
+ung["year"] = pd.to_numeric(ung["year"], errors="coerce")
+ung = ung[ung["llm_stance"].isin(STANCES)].dropna(subset=["year"])
+def sdist(sub):
+    return {s: round((sub["llm_stance"]==s).mean()*100,1) for s in STANCES} if len(sub) else {s:0 for s in STANCES}
+chn = ung[ung["country"]=="CHN"]
+pd_sig = sig  # People's Daily, signalled stances (domestic framing)
+chn2 = chn.copy(); chn2["dec"] = (chn2["year"]//10*10).astype(int)
+china_decade = [{"decade":f"{int(d)}s", "n":int(len(sub)), **sdist(sub)}
+                for d,sub in chn2.groupby("dec")]
+ungdc_out = {
+  "china_dist": sdist(chn),
+  "world_dist": sdist(ung),
+  "pd_dist":    {s: round((pd_sig["llm_stance"]==s).mean()*100,1) for s in STANCES},
+  "china_decade": china_decade,
+  "n_china": int(len(chn)), "n_world": int(len(ung)), "n_world_countries": int(ung["country"].nunique()),
+  "n_pd": int(len(pd_sig)),
+  "year_min": int(chn["year"].min()), "year_max": int(chn["year"].max()),
+  "china_rev_years": sorted(int(y) for y in chn[chn["llm_stance"]=="Revisionist"]["year"].unique()),
+}
+dump("ungdc.json", ungdc_out)
+
 print("\nDONE — site data written to", OUT)
