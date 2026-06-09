@@ -170,4 +170,36 @@ stats = {
   "west_accusatory_pct": (round(sum(r["Accusatory"] for r in _west)/sum(r["n"] for r in _west)*100) if _west else None),
 }
 dump("stats.json", stats)
+
+# ---------- 9. key-term frequencies (combined, selectable) ----------
+TERMS_XLSX = PROJ/"data/raw-extracts/PD terms.xlsx"
+CSF_XLSX   = PROJ/"data/raw-extracts/PD 人类命运共同体.xlsx"
+def yc(dates):
+    y = pd.to_datetime(dates, errors="coerce").dt.year.dropna().astype(int)
+    return y.value_counts().sort_index()
+TERM_DEFS = [
+  ("io",   "国际秩序",        "International order"),
+  ("csf",  "人类命运共同体",  "Community of shared future"),
+  ("ntr",  "新型国际关系",    "New type of international relations"),
+  ("gc",   "百年未有之大变局","Great changes unseen in a century"),
+  ("pwo",  "战后国际秩序",    "Post-war international order"),
+  ("isys", "国际体系",        "International system"),
+]
+xt = pd.ExcelFile(TERMS_XLSX)
+counts = {
+  "io":   df.groupby("year").size(),                              # the coded corpus = 国际秩序 freq
+  "csf":  yc(pd.read_excel(CSF_XLSX)["date"]),
+  "ntr":  yc(xt.parse("新型国际关系")["date"]),
+  "gc":   yc(xt.parse("百年未有之大变局")["date"]),
+  "pwo":  yc(xt.parse("战后国际秩序")["date"]),
+  "isys": yc(xt.parse("国际体系")["date"]),
+}
+YMIN, YMAX = 1990, int(df.year.max())
+terms_out = {
+  "terms": [{"key":k, "zh":zh, "en":en, "total": int(counts[k].sum())} for k,zh,en in TERM_DEFS],
+  "years": list(range(YMIN, YMAX+1)),
+  "series": {k: [{"year":y, "n":int(counts[k].get(y,0))} for y in range(YMIN,YMAX+1)] for k,_,_ in TERM_DEFS},
+}
+dump("terms.json", terms_out)
+
 print("\nDONE — site data written to", OUT)

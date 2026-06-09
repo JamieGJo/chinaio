@@ -9,14 +9,14 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609b';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',
-  'word_deed.json','unga.json','term_csf.json','term_gc_ntr.json'].map(J))
-.then(([stats, sby, sbm, aud, usal, wd, unga, csf, gcntr]) => {
+  'word_deed.json','unga.json','terms.json'].map(J))
+.then(([stats, sby, sbm, aud, usal, wd, unga, td]) => {
   hero(stats); arc(sby, sbm); audience(aud); context(usal); worddeed(wd);
-  terms(csf, gcntr); termDefs(); stanceDefs(); ungaSection(unga, stats);
+  terms(td); stanceDefs(); ungaSection(unga, stats);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
 $('#ex-cards').innerHTML = '<p style="color:#9aa3ad;font-family:Inter,sans-serif">Loading the corpus…</p>';
@@ -229,34 +229,51 @@ window.setFilter = function(obj){
   document.getElementById('explorer').scrollIntoView({behavior:'smooth'});
 };
 
-/* ---------- term charts ---------- */
-function terms(csf, gcntr){
-  new Chart($('#csf-chart'),{ type:'bar', data:{ labels:csf.map(d=>d.year),
-    datasets:[{ data:csf.map(d=>d.n), backgroundColor:'#3F8F5B', borderWidth:0 }] },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>`Articles: ${c.raw}`}}},
-      scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true}},y:{beginAtZero:true}}} });
-  const years=[...new Set([...gcntr.gc.map(d=>d.year),...gcntr.ntr.map(d=>d.year)])].sort();
-  const gm=Object.fromEntries(gcntr.gc.map(d=>[d.year,d.n])), nm=Object.fromEntries(gcntr.ntr.map(d=>[d.year,d.n]));
-  new Chart($('#gcntr-chart'),{ type:'bar', data:{ labels:years, datasets:[
-    {label:'百年未有之大变局', data:years.map(y=>gm[y]||0), backgroundColor:'#6BA3B0', borderWidth:0},
-    {label:'新型国际关系', data:years.map(y=>nm[y]||0), backgroundColor:'#2E5E8C', borderWidth:0} ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},
-      scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true}},y:{beginAtZero:true}}} });
+/* ---------- combined term chart (selectable) ---------- */
+const TERM_COLORS = {io:'#22304a', csf:'#3F8F5B', ntr:'#2E5E8C', gc:'#6BA3B0', pwo:'#B23A48', isys:'#C8902A'};
+let termData, termChart, termVis;
+function terms(td){
+  termData = td;
+  termVis = Object.fromEntries(td.terms.map(t=>[t.key, true]));
+  $('#term-legend').innerHTML = td.terms.map(t=>
+    `<div class="it term-it" data-k="${t.key}" style="cursor:pointer;user-select:none">
+       <div class="dot" style="background:${TERM_COLORS[t.key]}"></div><span class="zh">${t.zh}</span>
+       <span style="color:#9aa3ad;font-size:.78rem">${t.en}</span></div>`).join('');
+  $('#term-legend').querySelectorAll('.term-it').forEach(el=> el.addEventListener('click', ()=>{
+    termVis[el.dataset.k] = !termVis[el.dataset.k];
+    el.style.opacity = termVis[el.dataset.k] ? '1' : '.38';
+    buildTerms();
+  }));
+  buildTerms();
+  termDefs(td);
+}
+function buildTerms(){
+  const td=termData;
+  const ds = td.terms.filter(t=>termVis[t.key]).map(t=>({
+    label:`${t.zh} ${t.en}`, data:td.series[t.key].map(d=>d.n),
+    borderColor:TERM_COLORS[t.key], backgroundColor:TERM_COLORS[t.key],
+    borderWidth:2.2, tension:.25, pointRadius:0, spanGaps:true }));
+  if(termChart) termChart.destroy();
+  termChart = new Chart($('#term-chart').getContext('2d'), { type:'line',
+    data:{ labels:td.years, datasets:ds },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw}` } } },
+      scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
+        y:{beginAtZero:true, title:{display:true, text:'Articles per year'}} } } });
 }
 
-/* ---------- term definitions ---------- */
-function termDefs(){
-  const T=[
-   ['国际秩序','International order','The core search term — tracked across the full archive.'],
-   ['人类命运共同体','Community of shared future','Xi Jinping\'s signature concept (from ~2013, amplified 2015); a vision of order grounded in shared destiny and multilateral cooperation, referenced in UN resolutions.'],
-   ['新型国际关系','New type of international relations','An early-Xi slogan for great-power relations without conflict or confrontation; peaks around 2018 in the data.'],
-   ['百年未有之大变局','Great changes unseen in a century','An era-framing term (from ~2017–18): "the most profound changes in a century". Rises through the trade-war and COVID years, peaks 2021.'],
-   ['战后国际秩序 / 国际体系','Post-war order / international system','Terms invoking the framework built after 1945; rising in recent years.'],
-   ['霸权主义','Hegemonism','One of the oldest critical terms; faded in the Jiang/Hu era, rising again from 2025.'],
-  ];
-  $('#term-defs').innerHTML = T.map(([zh,en,body])=>
-    `<details><summary><span class="termname">${zh}</span> <span class="sans" style="font-weight:400;color:#6B7280;font-size:.82rem">${en}</span></summary><div class="body">${body}</div></details>`).join('');
+/* ---------- term backgrounds (web-sourced, descriptive) ---------- */
+const TERM_BG = {
+  io:  'The general term for the rules, institutions and norms governing relations between states — the central object this site tracks. In official Chinese usage it is typically paired with calls to make the order "more just and reasonable" and to give developing countries a greater voice. (Wang Yi, People\'s Daily, Dec 2017.)',
+  csf: 'Xi Jinping\'s signature foreign-policy concept, first put to an international audience in March 2013 (Moscow), with roots in a 2007 Hu Jintao phrase. It frames nations\' futures as interlinked and calls for cooperation on peace, development and security. The official English shifted from "shared destiny" to "shared future" after Xi\'s 2015 UN speech; it was written into the CPC Constitution (Oct 2017) and the PRC Constitution (March 2018). Peaks here in 2018.',
+  ntr: 'A slogan for great-power relations "based on mutual respect, fairness and justice, and win-win cooperation", explicitly rejecting zero-sum competition. First floated in 2010 and set out by Xi in his March 2013 Moscow speech. An early-Xi formulation that peaks around 2018 and then recedes.',
+  gc:  'An era-framing phrase Xi used from October 2017 — "great changes unseen in a century" — for a perceived global power shift, invoking the upheavals of a century earlier (the First World War, the fall of empires, the rise of new powers). It now opens China\'s foreign- and defence-policy white papers. Peaks here in 2021, through the trade-war and COVID years.',
+  pwo: 'The order established by the victors of the Second World War, centred on the UN and the UN Charter. Chinese official discourse presents China as a contributor to and beneficiary of this order, "to be safeguarded and improved", and often contrasts it with what Beijing calls the Western "rules-based" order. An institutional-defensive term that reaches a new high in 2025.',
+  isys:'Closely paired with "international order" in Chinese usage — officials speak of "the international system centred on the UN and the international order based on international law". (English-language scholarship distinguishes the system — states and their interactions — from the order — the rules; Chinese discourse tends to use the two together.) Also reaches a new high in 2025.',
+};
+function termDefs(td){
+  $('#term-defs').innerHTML = td.terms.map(t=>
+    `<details><summary><span class="termname">${t.zh}</span> <span class="sans" style="font-weight:400;color:#6B7280;font-size:.82rem">${t.en}</span></summary><div class="body">${TERM_BG[t.key]||''}</div></details>`).join('');
 }
 
 /* ---------- stance definitions ---------- */
