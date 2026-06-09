@@ -144,6 +144,7 @@ section:last-of-type{border-bottom:none}
 .exp.compact summary{font-size:.78rem;font-weight:600;padding:.4rem .7rem;color:#52606e}
 .exp.compact summary::after{margin-left:.4rem}
 .exp.compact .body{font-size:.82rem;padding:.4rem .7rem .6rem}
+.exp.compact .termname{font-size:.9rem}
 
 /* ---- about ---- */
 .about{font-size:.92rem}

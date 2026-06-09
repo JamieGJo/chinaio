@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609n';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609o';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -32,8 +32,6 @@ function hero(s){
     $('#s-modal').textContent = s.modal_stance_since2013.toLowerCase();
     $('#s-modal-lbl').textContent = `the most common coded stance since 2013 (${s.modal_stance_since2013_pct}% of coded articles)`;
   }
-  const rw = document.getElementById('ru-west');
-  if(rw && s.west_accusatory_pct!=null) rw.textContent = `${s.west_accusatory_pct}%`;
   $('#s-updated').textContent = s.updated; $('#ft-updated').textContent = s.updated;
   $('#ab-n').textContent = fmt(s.n_articles);
 }
@@ -113,9 +111,6 @@ function audience(aud){
   }).join('');
   $('#aud-bars').querySelectorAll('.audrow').forEach(el=>
     el.addEventListener('click',()=>setFilter({a:el.dataset.aud})));
-  const ru = aud.russia_ukraine;
-  if(ru){ $('#ru-pre').textContent = Math.round(ru['pre-2022'].Accusatory)+'%';
-          $('#ru-post').textContent = Math.round(ru['2022+'].Accusatory)+'%'; }
 }
 
 /* ---------- context: order-talk metric vs continuous covariate (both tabbed) ---------- */
