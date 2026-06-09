@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609i';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260609j';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','us_alienation.json',

@@ -134,9 +134,11 @@ section:last-of-type{border-bottom:none}
 .exp .body{padding:.5rem .9rem .8rem;font-size:.88rem;color:#33414f;border-top:1px solid var(--line)}
 .exp .body .zh{display:block;color:var(--muted);font-size:.85em;margin-top:.4rem}
 .termname{font-family:'Noto Serif SC',serif;font-size:1.02rem;color:#1a2336}
-.exp.compact{gap:.3rem;margin-top:.9rem;max-width:840px}
-.exp.compact details{background:#fafbfc}
+.exp.compact{flex-direction:row;flex-wrap:wrap;gap:.4rem;margin-top:.9rem;max-width:900px}
+.exp.compact details{flex:0 1 auto;background:#fafbfc}
+.exp.compact details[open]{flex-basis:100%}
 .exp.compact summary{font-size:.78rem;font-weight:600;padding:.4rem .7rem;color:#52606e}
+.exp.compact summary::after{margin-left:.4rem}
 .exp.compact .body{font-size:.82rem;padding:.4rem .7rem .6rem}
 
 /* ---- about ---- */
