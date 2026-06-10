@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260609o';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260610a';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -265,7 +265,7 @@ window.setFilter = function(obj){
 };
 
 /* ---------- combined term chart (selectable) ---------- */
-const TERM_COLORS = {io:'#22304a', csf:'#3F8F5B', ntr:'#2E5E8C', gc:'#6BA3B0', pwo:'#B23A48', isys:'#C8902A'};
+const TERM_COLORS = {io:'#22304a', csf:'#3F8F5B', ntr:'#2E5E8C', gc:'#6BA3B0', pwo:'#B23A48', isys:'#C8902A', heg:'#8A5A9E'};
 let termData, termChart, termVis, termView='annual', termFrom, termTo;
 function terms(td){
   termData = td;
@@ -323,6 +323,7 @@ const TERM_BG = {
   gc:  'An era-framing phrase Xi used from October 2017 — "great changes unseen in a century" — for a perceived global power shift, invoking the upheavals of a century earlier (the First World War, the fall of empires, the rise of new powers). It now opens China\'s foreign- and defence-policy white papers. Peaks here in 2021, through the trade-war and COVID years.',
   pwo: 'The order established by the victors of the Second World War, centred on the UN and the UN Charter. Chinese official discourse presents China as a contributor to and beneficiary of this order, "to be safeguarded and improved", and often contrasts it with what Beijing calls the Western "rules-based" order. An institutional-defensive term that reaches a new high in 2025.',
   isys:'Closely paired with "international order" in Chinese usage — officials speak of "the international system centred on the UN and the international order based on international law". (English-language scholarship distinguishes the system — states and their interactions — from the order — the rules; Chinese discourse tends to use the two together.) Also reaches a new high in 2025.',
+  heg: 'One of the oldest terms in PRC foreign-policy discourse: China has positioned itself against "hegemonism" — the domination of many states by one power — since the 1950s, tied to the Five Principles of Peaceful Coexistence and to Beijing\'s standing pledge to "never seek hegemony." Deng Xiaoping set out its modern meaning at the UN in 1974, condemning both superpowers; in the post-Cold-War period the charge is aimed chiefly at the United States and "power politics." Unlike the other terms here, this series is heaviest in the Cold-War decades and tapers afterwards. (Frequencies from a separate People\'s Daily 霸权主义 scrape.)',
 };
 function termDefs(td){
   $('#term-defs').innerHTML = td.terms.map(t=>

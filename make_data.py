@@ -279,6 +279,7 @@ dump("stats.json", stats)
 # ---------- 9. key-term frequencies (combined, selectable) ----------
 TERMS_XLSX = PROJ/"data/raw-extracts/PD terms.xlsx"
 CSF_XLSX   = PROJ/"data/raw-extracts/PD 人类命运共同体.xlsx"
+HEG_XLSX   = PROJ/"data/raw-extracts/2026-06-10_hostile-hegemony_PD_cleaned.xlsx"  # 霸权主义 sheet (cleaned scrape)
 def yc(dates):
     y = pd.to_datetime(dates, errors="coerce").dt.year.dropna().astype(int)
     return y.value_counts().sort_index()
@@ -289,6 +290,7 @@ TERM_DEFS = [
   ("gc",   "百年未有之大变局","Great changes unseen in a century"),
   ("pwo",  "战后国际秩序",    "Post-war international order"),
   ("isys", "国际体系",        "International system"),
+  ("heg",  "霸权主义",        "Hegemonism"),
 ]
 xt = pd.ExcelFile(TERMS_XLSX)
 # read each term's dates once → use for both annual counts and monthly rolling
@@ -299,6 +301,7 @@ dates_src = {
   "gc":   xt.parse("百年未有之大变局")["date"],
   "pwo":  xt.parse("战后国际秩序")["date"],
   "isys": xt.parse("国际体系")["date"],
+  "heg":  pd.read_excel(HEG_XLSX, sheet_name="霸权主义")["date"],
 }
 counts = {k: yc(v) for k,v in dates_src.items()}
 YMIN, YMAX = 1990, int(df.year.max())
