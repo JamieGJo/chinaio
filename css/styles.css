@@ -23,13 +23,13 @@ h2 .zh{display:block;font-size:1rem;font-weight:600;color:var(--muted);margin-to
 
 /* ---- sticky nav ---- */
 .nav{position:sticky;top:0;z-index:50;background:rgba(34,48,74,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.08)}
-.nav .container{display:flex;align-items:center;gap:1.2rem;height:56px}
-.nav .brand{font-family:'Inter',sans-serif;font-weight:700;color:#fff;font-size:.92rem;white-space:nowrap}
+.nav .container{display:flex;align-items:center;gap:.8rem 1rem;min-height:56px;flex-wrap:wrap;padding-top:.45rem;padding-bottom:.45rem}
+.nav .brand{font-family:'Inter',sans-serif;font-weight:700;color:#fff;font-size:.92rem;white-space:nowrap;flex-shrink:0}
 .nav .brand .dot{color:var(--gold)}
-.nav .links{display:flex;gap:1.1rem;margin-left:auto;overflow-x:auto}
+.nav .links{display:flex;flex-wrap:wrap;gap:.35rem .85rem;margin-left:auto;min-width:0}
 .nav .links a{font-family:'Inter',sans-serif;color:#c7cfdb;font-size:.83rem;white-space:nowrap}
 .nav .links a:hover{color:#fff;text-decoration:none}
-@media(max-width:760px){.nav .brand span.full{display:none}}
+@media(max-width:760px){.nav .brand span.full{display:none}.nav .links{gap:.3rem .7rem}.nav .links a{font-size:.8rem}}
 
 /* ---- hero ---- */
 .hero{background:linear-gradient(160deg,#1b2740 0%,#26334e 60%,#2d3c58 100%);color:#fff;padding:3.4rem 0 2.6rem;position:relative;overflow:hidden}
