@@ -264,7 +264,7 @@ _west = [r for r in arows if r["audience"] in ("United States","Western allies")
 stats = {
   "n_articles": int(len(df)),
   "year_min": int(df.year.min()), "year_max": int(df.year.max()),
-  "updated": "2026-06-06",
+  "updated": (df["dt"].max().strftime("%Y-%m-%d") if df["dt"].notna().any() else ""),  # latest article date in the corpus
   "stance_totals": {s:int((df["llm_stance"]==s).sum()) for s in STANCES},
   "us_accusatory_pct": next((round(r["Accusatory"]/r["n"]*100) for r in arows if r["audience"]=="United States"), None),
   "gs_accusatory_pct": next((round(r["Accusatory"]/r["n"]*100) for r in arows if r["audience"]=="Global South minilaterals"), None),
