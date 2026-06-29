@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260629c';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260629d';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -94,19 +94,31 @@ function buildArc(mode){
 }
 
 /* ---------- audience bars ---------- */
+let audData;
+const AUD_SHORT = {'Global South minilaterals':'Global South','UN / multilateral system':'UN / multilateral',
+  'Domestic (Party/governance)':'Domestic (Party)','Western allies':'Western allies','United States':'United States',
+  'Taiwan / sovereignty':'Taiwan','Great-power theory':'Great-power theory','Other bilateral':'Other bilateral',
+  'General (unspecified)':'General'};
 function audience(aud){
+  audData = aud;
   legend($('#aud-legend'), STANCES);
-  const rows = aud.by_audience.map(r=>({...r, reformish:(r.Reform+r['Defend-and-Reform'])/r.n}))
+  const sel = $('#aud-decade');
+  if(sel){
+    sel.innerHTML = (aud.decades||['All']).map(d=>
+      `<option value="${d}">${d==='All'?'All years':d}</option>`).join('');
+    sel.addEventListener('change',()=>buildAudience(sel.value));
+  }
+  buildAudience('All');
+}
+function buildAudience(decade){
+  const src = (audData.by_decade && audData.by_decade[decade]) || audData.by_audience;
+  const rows = src.filter(r=>r.n>0).map(r=>({...r, reformish:(r.Reform+r['Defend-and-Reform'])/r.n}))
     .sort((a,b)=> b.reformish - a.reformish);
-  const short = {'Global South minilaterals':'Global South','UN / multilateral system':'UN / multilateral',
-    'Domestic (Party/governance)':'Domestic (Party)','Western allies':'Western allies','United States':'United States',
-    'Taiwan / sovereignty':'Taiwan','Great-power theory':'Great-power theory','Other bilateral':'Other bilateral',
-    'General (unspecified)':'General'};
   $('#aud-bars').innerHTML = rows.map(r=>{
     const segs = STANCES.map(s=>{ const pct=r[s]/r.n*100; return pct>0?
       `<span class="c-${s.replace(/ /g,'')}" title="${s}: ${pct.toFixed(0)}%" style="width:${pct}%;background:${C[s]}"></span>`:''; }).join('');
     return `<div class="audrow" data-aud="${r.audience}">
-      <div class="audname">${short[r.audience]||r.audience} <small>n=${r.n}</small></div>
+      <div class="audname">${AUD_SHORT[r.audience]||r.audience} <small>n=${r.n}</small></div>
       <div class="audbar">${segs}</div></div>`;
   }).join('');
   $('#aud-bars').querySelectorAll('.audrow').forEach(el=>

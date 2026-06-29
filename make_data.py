@@ -132,7 +132,24 @@ ru = sig[sig["audience"]=="Russia"]
 def share(sub,s): return round((sub["llm_stance"]==s).mean()*100,1) if len(sub) else None
 russia_ukraine = {p: {"n":int(len(s)), **{st:share(s,st) for st in STANCES}}
                   for p,s in [("pre-2022",ru[ru.year<2022]),("2022+",ru[ru.year>=2022])]}
-dump("audience_stance.json", {"by_audience":arows, "russia_ukraine":russia_ukraine})
+# per-decade audience breakdown, so the "Stance composition by audience" chart can be
+# filtered by decade. Keep the same audience set the overall chart shows (n≥30 overall),
+# but recompute each one's stance mix within the decade; per-decade n rides along as the
+# label and audiences absent from a decade carry through as n=0 (the client drops them).
+aud_set = [r["audience"] for r in arows]
+sig_dec = sig.assign(dec=(sig["year"].astype(int)//10*10))
+aud_decs = sorted({int(d) for d in sig_dec["dec"].unique() if int(d) >= 1990}, reverse=True)
+def aud_rows(frame):
+    out = []
+    for a in aud_set:
+        sub = frame[frame["audience"] == a]; c = sub["llm_stance"].value_counts()
+        out.append({"audience":a, "n":int(len(sub)), **{s:int(c.get(s,0)) for s in STANCES}})
+    return out
+by_decade = {"All": arows}
+for d in aud_decs:
+    by_decade[f"{d}s"] = aud_rows(sig_dec[sig_dec.dec == d])
+dump("audience_stance.json", {"by_audience":arows, "russia_ukraine":russia_ukraine,
+                              "by_decade":by_decade, "decades":["All"]+[f"{d}s" for d in aud_decs]})
 
 # ---------- 4. US isolation at the UN + China IO volume (descriptive context) ----------
 ua = pd.read_csv(EXT/"us_un_alienation.csv")
