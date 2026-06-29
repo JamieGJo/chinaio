@@ -349,6 +349,25 @@ ungdc_out = {
   "year_min": int(chn["year"].min()), "year_max": int(chn["year"].max()),
   "china_rev_years": sorted(int(y) for y in chn[chn["llm_stance"]=="Revisionist"]["year"].unique()),
 }
+
+# per-decade 3-way comparison (China·UN / all states·UN / China·PD-home), so the
+# "China vs the world vs home" chart can be filtered by decade. Anchored on the
+# decades in which China actually spoke at the UN. "_n" rides along for the labels.
+def dist_n(sub):
+    s = sub[sub["llm_stance"].isin(STANCES)]; n = len(s)
+    return {**{st: (round((s["llm_stance"]==st).mean()*100, 1) if n else 0) for st in STANCES},
+            "_n": int(n)}
+
+ung2  = ung.assign(dec=(ung["year"]//10*10).astype(int))
+sig_d = sig.assign(dec=(sig["year"].astype(int)//10*10))
+china_decs = sorted({int(d) for d in chn2["dec"].unique()}, reverse=True)
+compare = {"All": {"china": dist_n(chn), "world": dist_n(ung), "pd": dist_n(sig)}}
+for d in china_decs:
+    compare[f"{d}s"] = {"china": dist_n(chn2[chn2.dec == d]),
+                        "world": dist_n(ung2[ung2.dec == d]),
+                        "pd":    dist_n(sig_d[sig_d.dec == d])}
+ungdc_out["compare"] = compare
+ungdc_out["compare_decades"] = ["All"] + [f"{d}s" for d in china_decs]
 dump("ungdc.json", ungdc_out)
 
 # ---------- 11. English-language outlets vs Chinese (audience/language) ----------
@@ -396,6 +415,19 @@ for lbl, d_ in QSRC:
     for stance in ["Accusatory","Defend"]:
         quotes += pick(lbl, d_, stance, 1)
 english_out["quotes"] = quotes
+
+# stance composition by source, per decade (English outlets exist 2000s onward),
+# so the "Stance composition by source" chart can be filtered by decade. dist_n is
+# defined in §10 above; sig_d / chn2 are in scope.
+en_pd_d = en_pd.dropna(subset=["year"]).assign(dec=lambda x: (x["year"].astype(int)//10*10))
+cd_d    = cd.dropna(subset=["year"]).assign(dec=lambda x: (x["year"].astype(int)//10*10))
+en_decs = [2020, 2010, 2000]
+comp = {"All": {"pd_zh": dist_n(sig), "pd_en": dist_n(en_pd), "cd": dist_n(cd), "unga": dist_n(chn)}}
+for d in en_decs:
+    comp[f"{d}s"] = {"pd_zh": dist_n(sig_d[sig_d.dec == d]), "pd_en": dist_n(en_pd_d[en_pd_d.dec == d]),
+                     "cd":    dist_n(cd_d[cd_d.dec == d]),   "unga":  dist_n(chn2[chn2.dec == d])}
+english_out["comp"] = comp
+english_out["comp_decades"] = ["All"] + [f"{d}s" for d in en_decs]
 dump("english.json", english_out)
 
 print("\nDONE — site data written to", OUT)

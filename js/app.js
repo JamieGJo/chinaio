@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260629b';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260629c';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -344,6 +344,7 @@ function stanceDefs(){
 }
 
 /* ---------- UNGA (cross-national + domestic comparison) ---------- */
+let ungdcData, ungaCmpChart;
 function ungaSection(unga, ungdc, stats){
   // Analysis intro (data-driven)
   const revYrs = (ungdc.china_rev_years||[]).join(', ');
@@ -363,11 +364,20 @@ function ungaSection(unga, ungdc, stats){
       scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:false, font:{size:9}}},
         y:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Share of speeches (%)'}} } } });
 
-  // Chart 2 — China·UN vs World·UN vs China·home (stacked 100% composition)
+  // Chart 2 — China·UN vs World·UN vs China·home (stacked 100% composition), by decade
+  ungdcData = ungdc;
   legend($('#ungaCmp-legend'), STANCES);
-  const groups=[['China · UN', ungdc.china_dist],['All states · UN', ungdc.world_dist],['China · People\'s Daily (home)', ungdc.pd_dist]];
-  new Chart($('#unga-compare-chart').getContext('2d'),{ type:'bar',
-    data:{ labels:groups.map(g=>g[0]), datasets: STANCES.map(s=>({
+  const csel = $('#ungaCmp-decade');
+  csel.innerHTML = ungdc.compare_decades.map(d=>`<option value="${d}">${d==='All'?'All years':d}</option>`).join('');
+  csel.addEventListener('change', ()=>buildUngaCompare(csel.value));
+  buildUngaCompare('All');
+}
+function buildUngaCompare(decade){
+  const cmp = ungdcData.compare[decade] || ungdcData.compare['All'];
+  const groups=[['China · UN', cmp.china],['All states · UN', cmp.world],['China · People\'s Daily (home)', cmp.pd]];
+  if(ungaCmpChart) ungaCmpChart.destroy();
+  ungaCmpChart = new Chart($('#unga-compare-chart').getContext('2d'),{ type:'bar',
+    data:{ labels:groups.map(g=>`${g[0]} · n=${g[1]._n}`), datasets: STANCES.map(s=>({
       label:s, data:groups.map(g=>g[1][s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
@@ -378,7 +388,7 @@ function ungaSection(unga, ungdc, stats){
 /* ---------- In English (China Daily + PD English vs Chinese) ---------- */
 const EN_SRC_COLORS = {pd_zh:'#22304a', pd_en:'#2E5E8C', cd:'#C8902A'};
 const EN_SRCS = [['pd_zh',"People's Daily (Chinese)"],['pd_en',"People's Daily English"],['cd',"China Daily"]];
-let enData, enTimeChart, enStance='Accusatory', enVis={pd_zh:true, pd_en:true, cd:true};
+let enData, enTimeChart, enCompChart, enStance='Accusatory', enVis={pd_zh:true, pd_en:true, cd:true};
 function englishSection(en){
   enData = en; const d = en.dist;
   $('#english-intro').innerHTML =
@@ -386,17 +396,12 @@ function englishSection(en){
     `Both carry almost no overt Revisionist language (People's Daily English ${d.pd_en.Revisionist}%, China Daily ${d.cd.Revisionist}%, against ${d.pd_zh.Revisionist}% in the Chinese edition). ` +
     `China Daily is the most Accusatory (${d.cd.Accusatory}%); People's Daily English leans most to Defend (${d.pd_en.Defend}%).`;
 
-  // composition by source (stacked 100%)
+  // composition by source (stacked 100%), filterable by decade
   legend($('#enComp-legend'), STANCES);
-  const groups = [["People's Daily (Chinese)", d.pd_zh], ["People's Daily English", d.pd_en],
-                  ["China Daily", d.cd], ["China · UN", d.unga]];
-  new Chart($('#english-comp-chart').getContext('2d'),{ type:'bar',
-    data:{ labels:groups.map(g=>g[0]), datasets: STANCES.map(s=>({
-      label:s, data:groups.map(g=>g[1][s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
-      scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
-        y:{stacked:true, grid:{display:false}} } } });
+  const dsel = $('#enComp-decade');
+  dsel.innerHTML = en.comp_decades.map(x=>`<option value="${x}">${x==='All'?'All years':x}</option>`).join('');
+  dsel.addEventListener('change', ()=>buildEnComp(dsel.value));
+  buildEnComp('All');
 
   // stance-over-time toggle
   $('#enStance-toggle').innerHTML = STANCES.map(s=>`<button data-s="${s}" class="${s===enStance?'on':''}">${s}</button>`).join('');
@@ -407,6 +412,19 @@ function englishSection(en){
   $('#enSrc-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
     enVis[b.dataset.k] = !enVis[b.dataset.k]; b.classList.toggle('on', enVis[b.dataset.k]); buildEnTime(); });
   buildEnTime();
+}
+function buildEnComp(decade){
+  const c = (enData.comp && enData.comp[decade]) || enData.comp['All'];
+  const groups = [["People's Daily (Chinese)", c.pd_zh], ["People's Daily English", c.pd_en],
+                  ["China Daily", c.cd], ["China · UN", c.unga]];
+  if(enCompChart) enCompChart.destroy();
+  enCompChart = new Chart($('#english-comp-chart').getContext('2d'),{ type:'bar',
+    data:{ labels:groups.map(g=>`${g[0]} · n=${g[1]._n}`), datasets: STANCES.map(s=>({
+      label:s, data:groups.map(g=>g[1][s]||0), backgroundColor:C[s], stack:'a', borderWidth:0 })) },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
+      scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
+        y:{stacked:true, grid:{display:false}} } } });
 }
 function buildEnTime(){
   const en=enData, srcs=EN_SRCS.filter(([k])=>enVis[k]);
