@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260610a';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260629a';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -45,10 +45,10 @@ function legend(el, items){
 /* ---------- arc chart ---------- */
 let arcChart, arcMode='count', arcData, arcMonthly;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const ARC_NOTE_YEAR = 'People\'s Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
+const ARC_NOTE_YEAR = 'People\'s Daily articles containing 国际秩序, by year (1990 onward; the current year is partial). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
 const ARC_NOTE_MONTH = 'Stance composition by calendar month, pooling all years (share of stance-coded articles; "Other" excluded). Shows seasonality — e.g. whether certain stances cluster around set-piece months. Not clickable.';
 function arc(sby, sbm){
-  arcData = sby.filter(d => d.year>=1990 && d.year<=2025);
+  arcData = sby.filter(d => d.year>=1990);
   arcMonthly = sbm || [];
   legend($('#arc-legend'), [...STANCES,'Other']);
   buildArc('count');
