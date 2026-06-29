@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260629a';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260629b';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -243,7 +243,7 @@ function card(a){
   const searchQ = isZh ? `"${a.h}" 人民日报` : `"${a.h}" ${a.src}`;
   return `<div class="acard">
     <div class="top"><span class="chip c-${sc}">${a.s}</span>
-      ${a.src?`<span class="srctag">${a.src}</span>`:''}
+      <span class="srctag">${a.src||"People's Daily (Chinese)"}</span>
       ${a.a&&a.a!=='—'?`<span class="tags"><b>${a.a}</b></span>`:''}
       <span class="date">${a.d}</span></div>
     <h4>${esc(a.h)||'<span style=color:#aaa>(no headline)</span>'}</h4>
