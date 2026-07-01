@@ -9,13 +9,13 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260629d';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260630a';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
-  'word_deed.json','unga.json','terms.json','ungdc.json','english.json'].map(J))
-.then(([stats, sby, sbm, aud, ctx, wd, unga, td, ungdc, en]) => {
-  hero(stats); arc(sby, sbm); audience(aud); context(ctx); worddeed(wd);
+  'word_deed.json','unga.json','terms.json','ungdc.json','english.json','recent_daily.json'].map(J))
+.then(([stats, sby, sbm, aud, ctx, wd, unga, td, ungdc, en, rd]) => {
+  hero(stats); arc(sby, sbm, rd); audience(aud); context(ctx); worddeed(wd);
   terms(td); stanceDefs(); ungaSection(unga, ungdc, stats); englishSection(en);
 }).catch(e => console.error(e));
 // Stage 2: the large article corpus → the explorer, loaded after.
@@ -43,13 +43,16 @@ function legend(el, items){
 }
 
 /* ---------- arc chart ---------- */
-let arcChart, arcMode='count', arcData, arcMonthly;
+let arcChart, arcMode='count', arcData, arcMonthly, arcRecent;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const ARC_NOTE_YEAR = 'People\'s Daily articles containing 国际秩序, by year (1990 onward; the current year is partial). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
 const ARC_NOTE_MONTH = 'Stance composition by calendar month, pooling all years (share of stance-coded articles; "Other" excluded). Shows seasonality — e.g. whether certain stances cluster around set-piece months. Not clickable.';
-function arc(sby, sbm){
+const ARC_NOTE_LASTMONTH = 'A close-up on the most recent five weeks: People\'s Daily (Chinese) 国际秩序 articles, one bar per day, coloured by stance. English-language sources (People\'s Daily English, China Daily) are omitted here — their scrape currently runs a few weeks behind, so a daily view would be misleadingly sparse; they remain in the yearly views and the explorer. <b>Click a coloured segment</b> to read that day\'s articles below. Rolling window, refreshed weekly.';
+function arc(sby, sbm, rd){
   arcData = sby.filter(d => d.year>=1990);
   arcMonthly = sbm || [];
+  arcRecent = rd || null;
+  if(arcRecent && arcRecent.articles) arcRecent.articles.forEach(a => a._src = a.src || "People's Daily (Chinese)");
   legend($('#arc-legend'), [...STANCES,'Other']);
   buildArc('count');
   $('#arc-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return;
@@ -74,6 +77,9 @@ function arcSeries(mode){
 }
 function buildArc(mode){
   arcMode = mode;
+  const _band = document.getElementById('arc-monthband'), _detail = document.getElementById('arc-detail');
+  if(mode!=='lastmonth'){ if(_band) _band.style.display='none'; if(_detail) _detail.innerHTML=''; }
+  if(mode==='lastmonth'){ buildArcLastMonth(); return; }
   const isMonth = mode==='month';
   const isPct = mode!=='count', isArea = mode==='area';
   const rows = isMonth ? arcMonthly : arcData;
@@ -275,6 +281,63 @@ window.setFilter = function(obj){
   render(true);
   document.getElementById('explorer').scrollIntoView({behavior:'smooth'});
 };
+
+/* ---------- arc "Last month" tab: daily PD-Chinese stance, click → article dropdown ---------- */
+function fmtDay(d){ return new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', {day:'numeric', month:'short', timeZone:'UTC'}); }
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function buildArcLastMonth(){
+  const rd = arcRecent, band = document.getElementById('arc-monthband'), note = document.getElementById('arc-note');
+  if(!rd || !rd.articles){ if(note) note.textContent = 'Recent daily data is unavailable.'; return; }
+  const set = [...STANCES, 'Other'];
+  const days = []; let d = new Date(rd.cutoff + 'T00:00:00Z'); const end = new Date(rd.latest + 'T00:00:00Z');
+  while(d <= end){ days.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate()+1); }
+  const rows = rd.articles.filter(a => a._src === "People's Daily (Chinese)");
+  const byDay = {}; days.forEach(dd => byDay[dd] = Object.fromEntries(set.map(s=>[s,0])));
+  rows.forEach(a => { const s = set.includes(a.s) ? a.s : 'Other'; if(byDay[a.d]) byDay[a.d][s]++; });
+  const datasets = set.map(s => ({ label:s, data:days.map(dd=>byDay[dd][s]), backgroundColor:C[s], borderWidth:0, type:'bar', stack:'a' }));
+  if(arcChart) arcChart.destroy();
+  arcChart = new Chart($('#arc-chart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:days, datasets },
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{intersect:true},
+      onClick:(e,els)=>{ if(!els.length) return; showArcDetail(days[els[0].index], datasets[els[0].datasetIndex].label); },
+      onResize: alignMonthBand,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ title:c=>fmtDay(c[0].label), label:c=> c.raw>0 ? `${c.dataset.label}: ${c.raw}` : null } } },
+      scales:{
+        x:{ stacked:true, grid:{display:false},
+            ticks:{ autoSkip:false, maxRotation:0, font:{size:9}, callback:function(v){ return +this.getLabelForValue(v).slice(8); } } },
+        y:{ stacked:true, beginAtZero:true, ticks:{ precision:0 }, title:{display:true, text:'articles / day'} } } }
+  });
+  // month band under the plot area — one label per month, sized by its number of days
+  const months = []; days.forEach(dd => { const m = dd.slice(0,7); const last = months[months.length-1];
+    if(last && last.m===m) last.n++; else months.push({m, n:1}); });
+  band.innerHTML = months.map(o => `<span style="flex:${o.n} 0 0">${MONTH_ABBR[+o.m.slice(5,7)-1]} ${o.m.slice(0,4)}</span>`).join('');
+  band.style.display = 'flex';
+  alignMonthBand();
+  if(note) note.innerHTML = ARC_NOTE_LASTMONTH;
+  document.getElementById('arc-detail').innerHTML='';
+}
+function alignMonthBand(){
+  const band = document.getElementById('arc-monthband');
+  if(!band || arcMode!=='lastmonth') return;
+  requestAnimationFrame(()=>{ if(!arcChart || !arcChart.chartArea) return;
+    band.style.paddingLeft = arcChart.chartArea.left + 'px';
+    band.style.paddingRight = (arcChart.width - arcChart.chartArea.right) + 'px'; });
+}
+function showArcDetail(day, stance){
+  const set = [...STANCES, 'Other'];
+  const arts = arcRecent.articles.filter(a => a._src==="People's Daily (Chinese)" && a.d===day && (set.includes(a.s)?a.s:'Other')===stance);
+  const box = document.getElementById('arc-detail');
+  if(!arts.length){ box.innerHTML=''; return; }
+  box.innerHTML = `<div class="rd-head"><span class="chip c-${stance.replace(/ /g,'')}">${stance}</span> `
+    + `<span>${fmtDay(day)} · People's Daily (Chinese) · ${arts.length} article${arts.length>1?'s':''}</span>`
+    + `<button class="rd-close" title="Close">×</button></div>` + arts.map(card).join('');
+  box.querySelectorAll('.why-btn').forEach(b => b.onclick=()=>{ const w=b.closest('.acard').querySelector('.why'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide reasoning':'Why this code?'; });
+  box.querySelectorAll('.en-btn').forEach(b => b.onclick=()=>{ const w=b.closest('.acard').querySelector('.en'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide English':'English'; });
+  box.querySelector('.rd-close').onclick=()=>{ box.innerHTML=''; };
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
 
 /* ---------- combined term chart (selectable) ---------- */
 const TERM_COLORS = {io:'#22304a', csf:'#3F8F5B', ntr:'#2E5E8C', gc:'#6BA3B0', pwo:'#B23A48', isys:'#C8902A', heg:'#8A5A9E'};

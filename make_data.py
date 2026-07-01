@@ -96,6 +96,16 @@ for srclabel, path in EN_SOURCES:
 recs.sort(key=lambda x: x["d"], reverse=True)
 dump("articles.json", recs)
 
+# ---------- 1b. recent daily deep-dive feed (last ~5 weeks, all sources) ----------
+# Small feed powering the "last month, day by day" chart below the English section. Rolling window
+# relative to the most recent coded article, so it refreshes whenever the corpus is rebuilt.
+if recs:
+    _latest = max(r["d"] for r in recs if r["d"])
+    _cut = (pd.Timestamp(_latest) - pd.Timedelta(days=34)).strftime("%Y-%m-%d")
+    _recent = [r for r in recs if r["d"] and r["d"] >= _cut]
+    dump("recent_daily.json", {"latest": _latest, "cutoff": _cut, "articles": _recent})
+    print(f"  recent_daily.json: {len(_recent)} articles, {_cut} … {_latest}")
+
 # ---------- 2. stance by year (LLM, 5 categories + other) ----------
 g = df.groupby(["year","llm_stance"]).size().unstack(fill_value=0)
 for s in STANCES:

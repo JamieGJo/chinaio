@@ -126,6 +126,15 @@ section:last-of-type{border-bottom:none}
 .acard .actions{display:flex;gap:.9rem;font-family:'Inter',sans-serif;font-size:.76rem;margin-top:.1rem}
 .acard .actions a,.acard .actions button{color:var(--defend);background:none;border:none;cursor:pointer;font-size:.76rem;font-family:'Inter',sans-serif;padding:0}
 .acard .actions button:hover{text-decoration:underline}
+/* recent daily deep-dive — click-through article dropdown */
+.recent-detail{margin-top:1rem;display:flex;flex-direction:column;gap:.6rem}
+.recent-detail:empty{display:none}
+.rd-head{display:flex;align-items:center;gap:.55rem;font-family:'Inter',sans-serif;font-size:.82rem;color:#475569;border-top:1px solid var(--line);padding-top:.8rem}
+.rd-close{margin-left:auto;background:none;border:1px solid var(--line);border-radius:6px;width:26px;height:26px;cursor:pointer;color:var(--muted);font-size:1.05rem;line-height:1}
+.rd-close:hover{background:#f4f7fb;color:#1a2336}
+/* month band under the "Last month" daily chart */
+.monthband{display:none;font-family:'Inter',sans-serif;font-size:.74rem;color:#6B7280;user-select:none;margin-top:1px}
+.monthband span{text-align:center;border-top:1px solid var(--line);padding-top:3px;min-width:0;overflow:hidden;white-space:nowrap}
 .loadmore{display:block;margin:1.4rem auto 0;padding:.6rem 1.4rem;font-family:'Inter',sans-serif;font-size:.86rem;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer}
 .loadmore:hover{background:var(--navy2)}
 

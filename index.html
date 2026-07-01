@@ -52,8 +52,10 @@
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="legend" id="arc-legend"></div>
     <div class="chart-wrap"><canvas id="arc-chart"></canvas></div>
-    <div style="text-align:center;margin-top:.65rem"><div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button><button data-mode="month">By month %</button></div></div>
+    <div id="arc-monthband" class="monthband"></div>
+    <div style="text-align:center;margin-top:.65rem"><div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button><button data-mode="month">By month %</button><button data-mode="lastmonth">Last month</button></div></div>
     <p class="chart-note" id="arc-note">People's Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.</p>
+    <div class="recent-detail" id="arc-detail"></div>
   </div>
   <div class="exp compact" id="stance-defs"></div>
 </div></section>
