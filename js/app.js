@@ -487,6 +487,35 @@ function englishSection(en){
   $('#enSrc-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
     enVis[b.dataset.k] = !enVis[b.dataset.k]; b.classList.toggle('on', enVis[b.dataset.k]); buildEnTime(); });
   buildEnTime();
+
+  // full stance-arc by year, one English source at a time (tab-selectable) —
+  // the flagship "Stance toward the order, by year" chart, scoped per source
+  legend($('#enArc-legend'), STANCES);
+  const EN_ARC_SRCS = EN_SRCS.filter(([k])=>k==='cd'||k==='pd_en')
+    .sort((a,b)=> (a[0]==='cd'?-1:1) - (b[0]==='cd'?-1:1));   // China Daily first, then PD English
+  $('#enArc-src-tabs').innerHTML = EN_ARC_SRCS.map(([k,lbl],i)=>
+    `<button data-k="${k}" class="${i===0?'on':''}">${lbl}</button>`).join('');
+  $('#enArc-src-tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); buildEnArc(b.dataset.k); });
+  buildEnArc(EN_ARC_SRCS[0][0]);
+}
+let enArcChart;
+function buildEnArc(srcKey){
+  const rows = enData.by_year[srcKey] || [];
+  const labels = rows.map(d=>d.year);
+  const datasets = STANCES.map(s=>({
+    label:s, data: rows.map(d=> d.n ? (d[s]==null?0:d[s]) : null),
+    backgroundColor:C[s], stack:'a', borderWidth:0 }));
+  if(enArcChart) enArcChart.destroy();
+  enArcChart = new Chart($('#english-arc-chart').getContext('2d'), { type:'bar',
+    data:{ labels, datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{
+          title:c=>{ const n=rows[c[0].dataIndex]?.n; return `${c[0].label}${n?` · n=${n}`:''}`; },
+          label:c=> c.raw==null?null:`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
+      scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}},
+        y:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Share of stance-coded articles (%)'}} } } });
 }
 function buildEnComp(decade){
   const c = (enData.comp && enData.comp[decade]) || enData.comp['All'];
