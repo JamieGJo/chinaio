@@ -9,7 +9,7 @@ const fmt = n => n.toLocaleString('en-US');
 Chart.defaults.font.family = "Inter, sans-serif";
 Chart.defaults.color = '#52606e';
 
-const VER = '20260630a';   // bump when data/ is regenerated, to bust browser cache
+const VER = '20260806a';   // bump when data/ is regenerated, to bust browser cache
 const J = f => fetch('data/'+f+'?v='+VER).then(r => r.json());
 // Stage 1: small files → charts render instantly.
 Promise.all(['stats.json','stance_by_year.json','stance_by_month.json','audience_stance.json','context.json',
@@ -43,14 +43,35 @@ function legend(el, items){
 }
 
 /* ---------- arc chart ---------- */
+// Unified across all three sources (People's Daily Chinese/English, China Daily):
+// each has count/share%/flow%/by-month%/last-month views. pd_zh's yearly+monthly
+// data comes from stance_by_year.json/stance_by_month.json (arcData/arcMonthly);
+// pd_en/cd's comes from english.json's by_year/by_month, in the SAME raw-count
+// shape, so arcSeries()/buildArc() work unmodified regardless of source.
 let arcChart, arcMode='count', arcSrc='pd_zh', arcData, arcMonthly, arcRecent;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const ARC_NOTE_YEAR = 'People\'s Daily articles containing 国际秩序, by year (1990 onward; the current year is partial). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
-const ARC_NOTE_MONTH = 'Stance composition by calendar month, pooling all years (share of stance-coded articles; "Other" excluded). Shows seasonality — e.g. whether certain stances cluster around set-piece months. Not clickable.';
-const ARC_NOTE_LASTMONTH = 'A close-up on the most recent five weeks: People\'s Daily (Chinese) 国际秩序 articles, one bar per day, coloured by stance. English-language sources (People\'s Daily English, China Daily) are omitted here — their scrape currently runs a few weeks behind, so a daily view would be misleadingly sparse; they remain in the yearly views and the explorer. <b>Click a coloured segment</b> to read that day\'s articles below. Rolling window, refreshed weekly.';
-// Source tabs: internal key -> explorer's #f-src filter value (srcOf() in the
-// explorer treats a missing `src` field as "People's Daily (Chinese)").
-const ARC_SRC_FILTER = {pd_zh:"People's Daily (Chinese)", pd_en:"People's Daily English", cd:"China Daily"};
+// Source tabs: internal key -> both the explorer's #f-src filter value AND the
+// recent_daily.json article tag (srcOf() in the explorer treats a missing `src`
+// field as "People's Daily (Chinese)"; recent_daily rows get the same default).
+const ARC_SRC_LABEL = {pd_zh:"People's Daily (Chinese)", pd_en:"People's Daily English", cd:"China Daily"};
+const ARC_SRC_DESC = {
+  pd_en: "People's Daily (English) is the English edition of the same paper (n=2,296 stance-coded, 2014–2026).",
+  cd:    "China Daily is a separate English-language state paper aimed at international readers (n=2,493 stance-coded, 2001–2026).",
+};
+function arcNoteYear(){
+  if(arcSrc==='pd_zh') return 'People\'s Daily articles containing 国际秩序, by year (1990 onward; the current year is partial). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.';
+  return `${ARC_SRC_DESC[arcSrc]} Same order vocabulary, coded on the same five-stance scheme as the Chinese edition. "Other" = on-topic but no clear stance. <b>Click a year</b> to filter the explorer to this source.`;
+}
+function arcNoteMonth(){
+  const src = arcSrc==='pd_zh' ? '' : ` (${ARC_SRC_LABEL[arcSrc]})`;
+  return `Stance composition by calendar month${src}, pooling all years (share of stance-coded articles; "Other" excluded). Shows seasonality — e.g. whether certain stances cluster around set-piece months. Not clickable.`;
+}
+function arcNoteLastmonth(){
+  const what = arcSrc==='pd_zh' ? '国际秩序 articles' : 'articles containing "international order"';
+  return `A close-up on the most recent five weeks: ${ARC_SRC_LABEL[arcSrc]} ${what}, one bar per day, coloured by stance. <b>Click a coloured segment</b> to read that day's articles below. Rolling window, refreshed weekly.`;
+}
+function currentYearRows(){ return arcSrc==='pd_zh' ? arcData : ((enData && enData.by_year && enData.by_year[arcSrc]) || []); }
+function currentMonthRows(){ return arcSrc==='pd_zh' ? arcMonthly : ((enData && enData.by_month && enData.by_month[arcSrc]) || []); }
 function arc(sby, sbm, rd, en){
   arcData = sby.filter(d => d.year>=1990);
   arcMonthly = sbm || [];
@@ -69,7 +90,7 @@ function arc(sby, sbm, rd, en){
 }
 function arcSeries(mode){
   const isMonth = mode==='month';
-  const rows = isMonth ? arcMonthly : arcData;
+  const rows = isMonth ? currentMonthRows() : currentYearRows();
   const set = [...STANCES,'Other'], isPct = mode!=='count';
   return set.map(s=>{
     const data = rows.map(d=>{
@@ -86,60 +107,26 @@ function arcSeries(mode){
 function buildArc(mode){
   arcMode = mode;
   const _band = document.getElementById('arc-monthband'), _detail = document.getElementById('arc-detail');
-  const _modeWrap = document.getElementById('arc-mode-toggle-wrap');
-  const _note = document.getElementById('arc-note'), _enNote = document.getElementById('arc-en-note');
-
-  if(arcSrc !== 'pd_zh'){
-    // English sources: share-only percent-stacked bar by year — no count/flow/
-    // month/lastmonth modes (the corpora are far smaller; see arc-en-note).
-    if(_band) _band.style.display='none'; if(_detail) _detail.innerHTML='';
-    if(_modeWrap) _modeWrap.style.display='none';
-    if(_note) _note.style.display='none';
-    if(_enNote) _enNote.style.display='';
-    buildArcEnglish(arcSrc);
-    return;
-  }
-  if(_modeWrap) _modeWrap.style.display='';
-  if(_enNote) _enNote.style.display='none';
-  if(_note) _note.style.display='';
-
+  const _note = document.getElementById('arc-note');
   if(mode!=='lastmonth'){ if(_band) _band.style.display='none'; if(_detail) _detail.innerHTML=''; }
   if(mode==='lastmonth'){ buildArcLastMonth(); return; }
   const isMonth = mode==='month';
   const isPct = mode!=='count', isArea = mode==='area';
-  const rows = isMonth ? arcMonthly : arcData;
+  const rows = isMonth ? currentMonthRows() : currentYearRows();
   const labels = isMonth ? MONTHS : rows.map(d=>d.year);
-  if(_note) _note.innerHTML = isMonth ? ARC_NOTE_MONTH : ARC_NOTE_YEAR;
+  if(_note) _note.innerHTML = isMonth ? arcNoteMonth() : arcNoteYear();
   if(arcChart) arcChart.destroy();
   arcChart = new Chart($('#arc-chart').getContext('2d'), {
     type: isArea?'line':'bar',
     data:{ labels, datasets:arcSeries(mode) },
     options:{ responsive:true, maintainAspectRatio:false,
       interaction: isArea?{mode:'index',intersect:false}:{intersect:true},
-      onClick:(e,els)=>{ if(!isMonth && els.length){ setFilter({y:String(arcData[els[0].index].year), src:ARC_SRC_FILTER.pd_zh});} },
+      onClick:(e,els)=>{ if(!isMonth && els.length){ setFilter({y:String(rows[els[0].index].year), src:ARC_SRC_LABEL[arcSrc]});} },
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:c=> isPct? `${c.dataset.label}: ${c.raw.toFixed(0)}%` : `${c.dataset.label}: ${c.raw}` } } },
       scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}},
         y:{ stacked:true, beginAtZero:true, max:isPct?100:undefined,
             title:{display:true, text: isPct?(isMonth?'Share of stance-coded (%), by month':'Share of stance-coded (%)'):'Article count'} } } } });
-}
-function buildArcEnglish(srcKey){
-  const rows = (enData && enData.by_year && enData.by_year[srcKey]) || [];
-  const labels = rows.map(d=>d.year);
-  const datasets = STANCES.map(s=>({
-    label:s, data: rows.map(d=> d.n ? (d[s]==null?0:d[s]) : null),
-    backgroundColor:C[s], stack:'a', borderWidth:0 }));
-  if(arcChart) arcChart.destroy();
-  arcChart = new Chart($('#arc-chart').getContext('2d'), { type:'bar',
-    data:{ labels, datasets },
-    options:{ responsive:true, maintainAspectRatio:false,
-      onClick:(e,els)=>{ if(els.length){ setFilter({y:String(rows[els[0].index].year), src:ARC_SRC_FILTER[srcKey]}); } },
-      plugins:{ legend:{display:false},
-        tooltip:{ callbacks:{
-          title:c=>{ const n=rows[c[0].dataIndex]?.n; return `${c[0].label}${n?` · n=${n}`:''}`; },
-          label:c=> c.raw==null?null:`${c.dataset.label}: ${c.raw.toFixed(0)}%` } } },
-      scales:{ x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}},
-        y:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Share of stance-coded articles (%)'}} } } });
 }
 
 /* ---------- audience bars ---------- */
@@ -335,7 +322,7 @@ function buildArcLastMonth(){
   const set = [...STANCES, 'Other'];
   const days = []; let d = new Date(rd.cutoff + 'T00:00:00Z'); const end = new Date(rd.latest + 'T00:00:00Z');
   while(d <= end){ days.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate()+1); }
-  const rows = rd.articles.filter(a => a._src === "People's Daily (Chinese)");
+  const rows = rd.articles.filter(a => a._src === ARC_SRC_LABEL[arcSrc]);
   const byDay = {}; days.forEach(dd => byDay[dd] = Object.fromEntries(set.map(s=>[s,0])));
   rows.forEach(a => { const s = set.includes(a.s) ? a.s : 'Other'; if(byDay[a.d]) byDay[a.d][s]++; });
   const datasets = set.map(s => ({ label:s, data:days.map(dd=>byDay[dd][s]), backgroundColor:C[s], borderWidth:0, type:'bar', stack:'a' }));
@@ -359,7 +346,7 @@ function buildArcLastMonth(){
   band.innerHTML = months.map(o => `<span style="flex:${o.n} 0 0">${MONTH_ABBR[+o.m.slice(5,7)-1]} ${o.m.slice(0,4)}</span>`).join('');
   band.style.display = 'flex';
   alignMonthBand();
-  if(note) note.innerHTML = ARC_NOTE_LASTMONTH;
+  if(note) note.innerHTML = arcNoteLastmonth();
   document.getElementById('arc-detail').innerHTML='';
 }
 function alignMonthBand(){
@@ -371,11 +358,12 @@ function alignMonthBand(){
 }
 function showArcDetail(day, stance){
   const set = [...STANCES, 'Other'];
-  const arts = arcRecent.articles.filter(a => a._src==="People's Daily (Chinese)" && a.d===day && (set.includes(a.s)?a.s:'Other')===stance);
+  const srcLabel = ARC_SRC_LABEL[arcSrc];
+  const arts = arcRecent.articles.filter(a => a._src===srcLabel && a.d===day && (set.includes(a.s)?a.s:'Other')===stance);
   const box = document.getElementById('arc-detail');
   if(!arts.length){ box.innerHTML=''; return; }
   box.innerHTML = `<div class="rd-head"><span class="chip c-${stance.replace(/ /g,'')}">${stance}</span> `
-    + `<span>${fmtDay(day)} · People's Daily (Chinese) · ${arts.length} article${arts.length>1?'s':''}</span>`
+    + `<span>${fmtDay(day)} · ${srcLabel} · ${arts.length} article${arts.length>1?'s':''}</span>`
     + `<button class="rd-close" title="Close">×</button></div>` + arts.map(card).join('');
   box.querySelectorAll('.why-btn').forEach(b => b.onclick=()=>{ const w=b.closest('.acard').querySelector('.why'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide reasoning':'Why this code?'; });
   box.querySelectorAll('.en-btn').forEach(b => b.onclick=()=>{ const w=b.closest('.acard').querySelector('.en'); w.classList.toggle('open'); b.textContent = w.classList.contains('open')?'Hide English':'English'; });
@@ -548,10 +536,17 @@ function buildEnComp(decade){
       scales:{ x:{stacked:true, beginAtZero:true, max:100, title:{display:true, text:'Stance composition (%)'}},
         y:{stacked:true, grid:{display:false}} } } });
 }
+// by_year now holds raw counts (matches stance_by_year.json's shape, so the
+// flagship arc chart can reuse it directly) — derive % client-side here, same
+// formula as arcSeries()'s pct mode.
+function pctOf(d, stance){
+  const base = STANCES.reduce((a,k)=>a+d[k],0);
+  return base ? d[stance]/base*100 : null;
+}
 function buildEnTime(){
   const en=enData, srcs=EN_SRCS.filter(([k])=>enVis[k]);
   const labels = en.by_year.pd_zh.map(d=>d.year);
-  const ds = srcs.map(([k,lbl])=>({ label:lbl, _k:k, data:en.by_year[k].map(d=>d[enStance]),
+  const ds = srcs.map(([k,lbl])=>({ label:lbl, _k:k, data:en.by_year[k].map(d=>pctOf(d,enStance)),
     borderColor:EN_SRC_COLORS[k], backgroundColor:EN_SRC_COLORS[k], borderWidth:2.4, tension:.25,
     pointRadius:0, spanGaps:true, borderDash: k==='pd_en'?[5,3]:undefined }));
   if(enTimeChart) enTimeChart.destroy();
@@ -560,7 +555,7 @@ function buildEnTime(){
       plugins:{ legend:{position:'top', labels:{boxWidth:12, font:{size:10}, padding:8}},
         tooltip:{ callbacks:{ label:c=>{ if(c.raw==null) return null;
           const n = en.by_year[c.dataset._k]?.[c.dataIndex]?.n;
-          return `${c.dataset.label}: ${c.raw}%${n?` (n=${n})`:''}`; } } } },
+          return `${c.dataset.label}: ${c.raw.toFixed(0)}%${n?` (n=${n})`:''}`; } } } },
       scales:{ x:{grid:{display:false}, ticks:{maxRotation:0,autoSkip:true}},
         y:{beginAtZero:true, title:{display:true, text:enStance+' share (%)'}} } } });
 }

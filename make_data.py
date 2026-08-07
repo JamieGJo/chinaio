@@ -402,16 +402,41 @@ en_pd = pd.read_csv(CLS/"2026-06-08_english-pd_llm-coded.csv", dtype=str)
 cd    = pd.read_csv(CLS/"2026-06-08_chinadaily_llm-coded.csv", dtype=str)
 for d_ in (en_pd, cd):
     d_["year"] = pd.to_datetime(d_["date"], errors="coerce").dt.year
+    d_["month"] = pd.to_datetime(d_["date"], errors="coerce").dt.month
 def comp(d_):
     s = d_[d_["llm_stance"].isin(STANCES)]
     return {st: round((s["llm_stance"]==st).mean()*100,1) for st in STANCES} if len(s) else {}
+# Raw counts (not percentages) — matches stance_by_year.json's shape exactly, so the
+# flagship arc chart's Count/Share%/Flow% client-side logic (arcSeries()) works
+# unmodified for these sources too. "n" keeps its original meaning (STANCES-only
+# count that year) for buildEnTime()'s tooltip; "Other" buckets Insufficient
+# Signal / Defend-and-Accusatory / blank, same convention as stance_by_year.json.
 def by_year(d_, years):
-    s = d_[d_["llm_stance"].isin(STANCES)]
+    s_only = d_[d_["llm_stance"].isin(STANCES)]
+    n_by_year = s_only.groupby("year").size()
+    g = d_.groupby(["year","llm_stance"]).size().unstack(fill_value=0)
+    for st in STANCES:
+        if st not in g.columns: g[st] = 0
+    g["Other"] = g.drop(columns=[c for c in STANCES if c in g.columns]).sum(axis=1)
     out = []
     for y in years:
-        sub = s[s["year"]==y]
-        out.append({"year": int(y), "n": int(len(sub)),
-                    **{st: (round((sub["llm_stance"]==st).mean()*100,1) if len(sub) else None) for st in STANCES}})
+        row = g.loc[y] if y in g.index else None
+        out.append({"year": int(y), "n": int(n_by_year.get(y, 0)),
+                    **{st: (int(row[st]) if row is not None else 0) for st in STANCES},
+                    "Other": (int(row["Other"]) if row is not None else 0)})
+    return out
+def by_month(d_):
+    s = d_[d_["month"].notna()]
+    g = s.groupby(["month","llm_stance"]).size().unstack(fill_value=0)
+    for st in STANCES:
+        if st not in g.columns: g[st] = 0
+    g["Other"] = g.drop(columns=[c for c in STANCES if c in g.columns]).sum(axis=1)
+    out = []
+    for mo in range(1, 13):
+        row = g.loc[mo] if mo in g.index else None
+        out.append({"month": int(mo),
+                    **{st: (int(row[st]) if row is not None else 0) for st in STANCES},
+                    "Other": (int(row["Other"]) if row is not None else 0)})
     return out
 YRS = list(range(2001, int(df.year.max())+1))   # China Daily starts 2001; PD English (2014+) is null before then
 english_out = {
@@ -427,6 +452,9 @@ english_out = {
   "by_year": {
     "pd_zh": by_year(sig.assign(year=sig["year"]), YRS),
     "pd_en": by_year(en_pd, YRS), "cd": by_year(cd, YRS),
+  },
+  "by_month": {
+    "pd_en": by_month(en_pd), "cd": by_month(cd),
   },
 }
 # a few illustrative English quotes (highest-confidence, non-empty quote, per source×key stance)

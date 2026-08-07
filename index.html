@@ -48,7 +48,7 @@
 <section id="arc"><div class="container">
   <div class="kicker">Stance over time · 各年立场</div>
   <h2>Stance toward the order, by year<span class="zh">各年立场分布</span></h2>
-  <p class="lead">Each article is coded into one stance toward the order. Pick a source in the side tabs, toggle between counts, share, and flow (Chinese People's Daily only), and click any year to read that year's articles below.</p>
+  <p class="lead">Each article is coded into one stance toward the order. Pick a source in the side tabs — People's Daily (Chinese), People's Daily (English), or China Daily, each on the same five-stance scheme — toggle between counts, share, flow, by-month, and last-month views, and click any year to read that year's articles below.</p>
   <div class="card chart-card" style="margin-top:1.1rem">
     <div class="side-layout">
       <div class="side-tabs" id="arc-src-tabs">
@@ -60,9 +60,8 @@
         <div class="legend" id="arc-legend"></div>
         <div class="chart-wrap"><canvas id="arc-chart"></canvas></div>
         <div id="arc-monthband" class="monthband"></div>
-        <div style="text-align:center;margin-top:.65rem" id="arc-mode-toggle-wrap"><div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button><button data-mode="month">By month %</button><button data-mode="lastmonth">Last month</button></div></div>
+        <div style="text-align:center;margin-top:.65rem"><div class="toggle" id="arc-toggle"><button data-mode="count" class="on">Count</button><button data-mode="pct">Share %</button><button data-mode="area">Flow %</button><button data-mode="month">By month %</button><button data-mode="lastmonth">Last month</button></div></div>
         <p class="chart-note" id="arc-note">People's Daily articles containing 国际秩序, by year (1990–2025 shown). "Other" = on-topic but no clear stance. Coding by a validated language model (agreement with human coders κ≈0.68–0.79). <b>Click a year</b> to filter the explorer.</p>
-        <p class="chart-note" id="arc-en-note" style="display:none">China's order vocabulary also appears in its English-language outlets, written largely for foreign readers and coded on the same five-stance scheme. <b>People's Daily (English)</b> is the English edition of the same paper (n=2,296 stance-coded, 2014–2026). <b>China Daily</b> is a separate English-language state paper aimed at international readers (n=2,493 stance-coded, 2001–2026). Shown as share only — the English corpora are far smaller than the Chinese edition, so count/flow/by-month views aren't meaningful here. <b>Click a year</b> to filter the explorer to that source and year.</p>
         <div class="recent-detail" id="arc-detail"></div>
       </div>
     </div>
