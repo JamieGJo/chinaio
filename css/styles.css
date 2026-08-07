@@ -67,6 +67,15 @@ section:last-of-type{border-bottom:none}
 .ctx-tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .ctx-tabs button:hover:not(.on){border-color:var(--navy);color:var(--ink)}
 
+/* ---- side tabs (vertical source picker beside a chart) ---- */
+.side-layout{display:flex;gap:1.3rem;align-items:flex-start}
+.side-tabs{display:flex;flex-direction:column;gap:.4rem;flex:0 0 152px}
+.side-tabs button{font-family:'Inter',sans-serif;font-size:.82rem;padding:.5rem .85rem;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);cursor:pointer;text-align:left;line-height:1.25}
+.side-tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.side-tabs button:hover:not(.on){border-color:var(--navy);color:var(--ink)}
+.side-main{flex:1;min-width:0}
+@media(max-width:700px){.side-layout{flex-direction:column}.side-tabs{flex-direction:row;flex-wrap:wrap;flex:none;width:100%}.side-tabs button{flex:1 1 auto}}
+
 /* ---- stance legend / chips ---- */
 .legend{display:flex;gap:1rem;flex-wrap:wrap;font-family:'Inter',sans-serif;font-size:.8rem;margin:.7rem 0}
 .legend .it{display:flex;align-items:center;gap:.38rem;cursor:default}
